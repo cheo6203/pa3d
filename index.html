@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>대통령기록관 · 행정박물 3D</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Pretendard','Apple SD Gothic Neo',sans-serif; background:#000; color:#fff; height:100vh; overflow:hidden; }
+#app { display:flex; height:100vh; }
+#panel { width:344px; min-width:344px; background:#0b0a09; border-right:1px solid rgba(255,255,255,0.05); display:flex; flex-direction:column; z-index:10; }
+#brand { padding:24px 28px 20px; border-bottom:1px solid rgba(255,255,255,0.05); }
+.brand-en { font-size:9px; letter-spacing:0.22em; color:rgba(212,165,116,0.7); text-transform:uppercase; margin-bottom:8px; }
+.brand-ko { font-size:14px; color:rgba(255,255,255,0.85); line-height:1.5; font-weight:600; }
+.brand-sub { font-size:11px; color:rgba(255,255,255,0.32); margin-top:3px; letter-spacing:0.02em; }
+#tabs { display:flex; padding:0 10px; border-bottom:1px solid rgba(255,255,255,0.05); }
+.tab { flex:1; min-width:0; padding:12px 3px; text-align:center; font-size:9.5px; color:rgba(255,255,255,0.3); cursor:pointer; border-bottom:1px solid transparent; margin-bottom:-1px; transition:all 0.3s; line-height:1.4; overflow:hidden; }
+.tab:hover { color:rgba(255,255,255,0.6); }
+.tab.active { color:#d4a574; border-bottom-color:#d4a574; }
+.tab .num { font-size:7.5px; opacity:0.5; display:block; margin-top:2px; letter-spacing:0.02em; white-space:nowrap; }
+#scroll-wrap { flex:1; overflow-y:auto; }
+#meta { padding:26px 28px; }
+#meta::-webkit-scrollbar { width:3px; }
+#meta::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.08); border-radius:2px; }
+.m-cat { display:inline-block; font-size:10px; letter-spacing:0.1em; color:#d4a574; border:1px solid rgba(212,165,116,0.3); padding:4px 11px; border-radius:2px; margin-bottom:16px; }
+.m-title { font-size:22px; font-weight:600; color:#fff; line-height:1.35; margin-bottom:4px; letter-spacing:-0.01em; }
+.m-hanja { font-size:13px; color:rgba(255,255,255,0.38); margin-bottom:20px; letter-spacing:0.05em; }
+.m-divider { height:1px; background:rgba(255,255,255,0.05); margin:18px 0; }
+.m-row { display:flex; gap:14px; padding:8px 0; align-items:flex-start; }
+.m-label { font-size:11px; color:rgba(255,255,255,0.3); min-width:62px; padding-top:2px; letter-spacing:0.05em; }
+.m-value { font-size:13px; color:rgba(255,255,255,0.8); line-height:1.55; flex:1; }
+.m-pres { display:flex; gap:13px; align-items:center; margin-top:18px; padding:13px 15px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:10px; }
+.m-pres-circle { width:44px; height:44px; border-radius:50%; border:1px solid rgba(212,165,116,0.4); display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:600; color:#d4a574; flex-shrink:0; }
+.m-pres-name { font-size:13px; color:rgba(255,255,255,0.85); font-weight:600; }
+.m-pres-term { font-size:11px; color:rgba(255,255,255,0.38); margin-top:3px; letter-spacing:0.02em; }
+.m-feat-label { font-size:10px; letter-spacing:0.1em; color:rgba(255,255,255,0.3); margin-bottom:9px; }
+.m-feature { font-size:12px; color:rgba(255,255,255,0.58); line-height:1.75; }
+.m-links { margin-top:20px; display:flex; flex-direction:column; gap:8px; }
+.m-link { display:flex; align-items:center; gap:10px; padding:11px 14px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:8px; font-size:12px; color:rgba(255,255,255,0.62); text-decoration:none; transition:all 0.25s; cursor:pointer; }
+.m-link:hover { background:rgba(212,165,116,0.06); border-color:rgba(212,165,116,0.22); color:#d4a574; }
+.m-link svg { flex-shrink:0; opacity:0.65; }
+.m-link .arr { margin-left:auto; opacity:0.35; font-size:15px; }
+.m-notice { font-size:10px; color:rgba(255,255,255,0.2); line-height:1.7; margin-top:22px; }
+.m-dl { display:flex; align-items:center; gap:10px; padding:11px 14px; margin-top:8px; background:rgba(212,163,49,0.07); border:1px solid rgba(212,163,49,0.3); border-radius:8px; font-size:12px; color:rgba(255,255,255,0.85); text-decoration:none; transition:all 0.25s; cursor:pointer; width:100%; box-sizing:border-box; }
+.m-dl:hover { background:rgba(212,163,49,0.14); border-color:rgba(212,163,49,0.55); }
+.m-dl svg { flex-shrink:0; opacity:0.85; }
+.m-dl-text { display:flex; flex-direction:column; gap:1px; flex:1; }
+.m-dl-title { font-weight:600; }
+.m-dl-sub { font-size:10px; color:rgba(255,255,255,0.4); }
+.m-dl-note { font-size:9.5px; color:rgba(255,255,255,0.28); line-height:1.6; margin-top:8px; }
+#tools { padding:16px 28px; border-top:1px solid rgba(255,255,255,0.05); display:flex; flex-direction:column; gap:14px; }
+.tool-group { display:flex; flex-direction:column; gap:9px; }
+.tool-label { font-size:9px; letter-spacing:0.12em; color:rgba(255,255,255,0.22); }
+.btn-grid { display:flex; gap:8px; }
+.cbtn { flex:1; padding:10px 4px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:7px; color:rgba(255,255,255,0.5); font-size:11px; cursor:pointer; transition:all 0.25s; }
+.cbtn:hover { background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.85); }
+.cbtn.active { background:rgba(212,165,116,0.1); border-color:rgba(212,165,116,0.3); color:#d4a574; }
+.slider-row { display:flex; align-items:center; gap:11px; }
+.slider-row label { font-size:11px; color:rgba(255,255,255,0.4); min-width:38px; }
+.slider-row input[type=range] { flex:1; -webkit-appearance:none; height:3px; background:rgba(255,255,255,0.12); border-radius:2px; outline:none; }
+.slider-row input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:#d4a574; cursor:pointer; }
+.slider-row input[type=range]::-moz-range-thumb { width:14px; height:14px; border-radius:50%; background:#d4a574; cursor:pointer; border:none; }
+.slider-row .val { font-size:10px; color:rgba(255,255,255,0.35); min-width:30px; text-align:right; }
+.dim-input-row { display:flex; align-items:center; gap:10px; }
+.dim-input-row label { font-size:11px; color:rgba(255,255,255,0.4); min-width:56px; }
+.dim-input-row input[type=number] { flex:1; background:rgba(255,255,255,0.04); border:1px solid rgba(212,165,116,0.25); border-radius:6px; color:#fff; font-size:12px; padding:7px 10px; outline:none; -moz-appearance:textfield; }
+.dim-input-row input[type=number]:focus { border-color:rgba(212,165,116,0.6); }
+.dim-input-row input::-webkit-outer-spin-button, .dim-input-row input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+.dim-input-row .dim-unit { font-size:11px; color:rgba(255,255,255,0.4); }
+.dim-calc { font-size:10px; color:rgba(255,255,255,0.3); line-height:1.5; padding-left:2px; }
+.dim-calc.active { color:#d4a574; }
+#viewer { flex:1; position:relative; overflow:hidden; background:#000; }
+#cv { width:100%; height:100%; display:block; }
+#loading { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#000; z-index:5; }
+.ring { width:36px; height:36px; border:1px solid rgba(212,165,116,0.15); border-top-color:#d4a574; border-radius:50%; animation:spin 1s linear infinite; margin-bottom:16px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.ltext { font-size:11px; color:rgba(255,255,255,0.28); letter-spacing:0.15em; }
+#caption { position:absolute; bottom:26px; left:50%; transform:translateX(-50%); z-index:6; text-align:center; pointer-events:none; }
+.cap-title { font-size:14px; letter-spacing:0.04em; color:rgba(255,255,255,0.85); font-weight:500; }
+.cap-sub { font-size:10px; letter-spacing:0.15em; color:rgba(212,165,116,0.7); margin-top:5px; text-transform:uppercase; }
+#hint { position:absolute; bottom:22px; right:22px; display:flex; gap:14px; z-index:5; }
+.h-item { display:flex; align-items:center; gap:6px; font-size:10px; color:rgba(255,255,255,0.22); }
+.h-key { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:3px; padding:2px 7px; color:rgba(255,255,255,0.38); }
+#rid { position:absolute; top:22px; right:24px; font-size:10px; color:rgba(255,255,255,0.18); letter-spacing:0.15em; z-index:5; }
+#dim-badge { position:absolute; top:20px; left:24px; z-index:6; display:none; font-size:10px; letter-spacing:0.05em; color:rgba(212,165,116,0.9); background:rgba(20,16,12,0.7); border:1px solid rgba(212,165,116,0.25); border-radius:5px; padding:6px 12px; }
+#dim-badge.show { display:block; }
+.dim-label { position:absolute; z-index:7; font-size:11px; color:#ffe0b0; background:rgba(20,15,10,0.85); border:1px solid rgba(212,165,116,0.4); border-radius:4px; padding:3px 8px; pointer-events:none; transform:translate(-50%,-50%); white-space:nowrap; display:none; }
+@media (max-width:768px){ #app{flex-direction:column;} #panel{width:100%;min-width:0;height:auto;max-height:44vh;} #viewer{flex:1;} #hint{display:none;} }
+
+
+/* ── 66건 탐색 UI ── */
+#pres-bar{display:flex;flex-wrap:wrap;gap:4px;padding:10px 14px 8px;border-bottom:1px solid rgba(255,255,255,0.05);flex-shrink:0;}
+.ptab{font-size:9.5px;padding:3px 8px;border-radius:12px;cursor:pointer;border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.35);transition:all 0.2s;user-select:none;white-space:nowrap;}
+.ptab:hover{border-color:rgba(201,168,76,0.4);color:rgba(255,255,255,0.65);}
+.ptab.active{background:rgba(201,168,76,0.15);border-color:rgba(201,168,76,0.5);color:#c9a84c;}
+#art-count{font-size:9.5px;color:rgba(255,255,255,0.25);padding:4px 14px;flex-shrink:0;}
+#art-list{overflow-y:auto;flex:1;}
+#art-list::-webkit-scrollbar{width:3px;}
+#art-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);}
+.art-item{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.03);transition:background 0.15s;}
+.art-item:hover{background:rgba(255,255,255,0.03);}
+.art-item.active{background:rgba(201,168,76,0.1);}
+.art-thumb{width:42px;height:42px;flex-shrink:0;border-radius:5px;overflow:hidden;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);}
+.art-thumb img{width:100%;height:100%;object-fit:cover;}
+.art-thumb .no-img{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:16px;opacity:0.4;}
+.art-info{min-width:0;flex:1;}
+.art-title{font-size:11.5px;font-weight:500;margin-bottom:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:rgba(255,255,255,0.85);}
+.art-sub{font-size:9.5px;color:rgba(255,255,255,0.3);}
+
+
+/* ── 사진 갤러리 ── */
+.m-gallery { margin-top:14px; }
+.m-gallery-label { font-size:10px; color:rgba(255,255,255,0.3); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:8px; }
+.m-gallery-grid { display:flex; gap:5px; flex-wrap:wrap; }
+.m-gallery-grid img {
+  width:72px; height:72px; object-fit:cover; border-radius:5px;
+  cursor:pointer; opacity:0.82; transition:opacity 0.2s;
+  border:1px solid rgba(255,255,255,0.08);
+}
+.m-gallery-grid img:hover { opacity:1; }
+
+/* 라이트박스 */
+#lightbox {
+  display:none; position:fixed; inset:0; z-index:999;
+  background:rgba(0,0,0,0.92); align-items:center; justify-content:center;
+  flex-direction:column; gap:12px;
+}
+#lightbox.open { display:flex; }
+#lightbox img { max-width:88vw; max-height:78vh; object-fit:contain; border-radius:8px; }
+#lightbox-close {
+  position:fixed; top:18px; right:22px;
+  font-size:24px; color:rgba(255,255,255,0.6); cursor:pointer;
+  background:none; border:none; line-height:1;
+}
+#lightbox-close:hover { color:#fff; }
+#lightbox-caption { font-size:12px; color:rgba(255,255,255,0.45); text-align:center; max-width:600px; }
+
+/* ===== GLB 활용 안내서 ===== */
+#guide { border-top:1px solid rgba(255,255,255,0.05); margin-top:4px; }
+#guide-toggle {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:13px 28px; cursor:pointer; font-size:11px; color:rgba(255,255,255,0.35);
+  letter-spacing:0.08em; text-transform:uppercase; user-select:none;
+  transition:color 0.2s;
+}
+#guide-toggle:hover { color:rgba(255,255,255,0.6); }
+#guide-toggle .g-arrow { font-size:9px; transition:transform 0.25s; }
+#guide-toggle.open .g-arrow { transform:rotate(180deg); }
+#guide-body { display:none; padding:0 22px 20px; }
+#guide-toggle.open + #guide-body { display:block; }
+
+.g-intro { font-size:11px; color:rgba(255,255,255,0.38); line-height:1.75; margin-bottom:16px; }
+.g-intro strong { color:rgba(255,255,255,0.65); font-weight:600; }
+
+.g-card {
+  background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.055);
+  border-radius:9px; padding:13px 14px; margin-bottom:10px;
+}
+.g-card-head {
+  display:flex; align-items:center; gap:9px; margin-bottom:8px;
+}
+.g-card-icon { font-size:15px; line-height:1; }
+.g-card-title { font-size:12px; font-weight:700; color:rgba(255,255,255,0.82); }
+.g-card-level {
+  margin-left:auto; font-size:9px; letter-spacing:0.05em;
+  padding:2px 7px; border-radius:20px; font-weight:600;
+}
+.lv-easy  { background:rgba(100,200,120,0.15); color:#78d492; border:1px solid rgba(100,200,120,0.25); }
+.lv-mid   { background:rgba(255,185,70,0.13);  color:#f0b84a; border:1px solid rgba(255,185,70,0.22); }
+.lv-hard  { background:rgba(220,90,80,0.13);   color:#e07060; border:1px solid rgba(220,90,80,0.22); }
+
+.g-card-body { font-size:10.5px; color:rgba(255,255,255,0.45); line-height:1.7; }
+.g-card-body .ok  { color:#78d492; }
+.g-card-body .warn { color:#f0b84a; }
+.g-card-body .tools { 
+  display:flex; flex-wrap:wrap; gap:5px; margin-top:8px;
+}
+.g-tag {
+  font-size:9.5px; padding:2px 8px; border-radius:4px;
+  background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+  color:rgba(255,255,255,0.5); white-space:nowrap;
+}
+.g-note {
+  margin-top:12px; padding:10px 12px;
+  background:rgba(212,163,49,0.07); border:1px solid rgba(212,163,49,0.18);
+  border-radius:7px; font-size:10px; color:rgba(255,255,255,0.4); line-height:1.7;
+}
+.g-note strong { color:rgba(212,163,49,0.85); }
+
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="panel">
+    <div id="brand">
+      <div class="brand-en">Presidential Archives of Korea</div>
+      <div class="brand-ko">대통령기록관</div>
+      <div class="brand-sub">선물·행정박물 3D 컬렉션</div>
+    </div>
+    <div id="pres-bar"></div>
+    <div id="art-count"></div>
+    <div id="art-list"></div>
+    <div id="scroll-wrap">
+    <div id="meta"></div>
+    <div id="tools">
+      <div class="tool-group">
+        <div class="tool-label">조사 도구</div>
+        <div class="btn-grid">
+          <button class="cbtn active" id="b-rot" onclick="toggleRot()">자동회전</button>
+          <button class="cbtn" id="b-dim" onclick="toggleDim()">치수</button>
+          <button class="cbtn" id="b-cut" onclick="toggleCut()">단면</button>
+          <button class="cbtn" id="b-wire" onclick="toggleWire()">메시</button>
+        </div>
+      </div>
+      <div class="tool-group" id="cut-group" style="display:none;">
+        <div class="slider-row"><label>절단면</label><input type="range" id="cut-slider" min="0" max="100" value="50" oninput="updateCut(this.value)"><span class="val" id="cut-val">50%</span></div>
+      </div>
+      <div class="tool-group" id="dim-group" style="display:none;">
+        <div class="dim-input-row">
+          <label>실측 높이</label>
+          <input type="number" id="dim-input" placeholder="예시값" oninput="updateMeasure(this.value)" min="0" step="0.1">
+          <span class="dim-unit">cm</span>
+        </div>
+        <div class="dim-calc" id="dim-calc">입력 시 폭이 비율대로 자동 환산됩니다</div>
+      </div>
+      <div class="tool-group">
+        <div class="tool-label">조명</div>
+        <div class="slider-row"><label>밝기</label><input type="range" id="light-slider" min="20" max="200" value="20" oninput="updateLight(this.value)"><span class="val" id="light-val">20%</span></div>
+      </div>
+    </div>
+
+    <div id="guide">
+      <div id="guide-toggle" onclick="this.classList.toggle('open')">
+        3D 파일 활용 안내
+        <span class="g-arrow">▼</span>
+      </div>
+      <div id="guide-body">
+        <p class="g-intro">
+          이 페이지에서 다운로드하는 <strong>.glb 파일</strong>은 포털(pa.go.kr) 원본 그대로입니다.
+          Blender 4.2로 포토그래메트리 방식 스캔 제작, PBR 재질 내장, 단일 파일 자기완결 구조입니다.
+          <strong>공공누리 제4유형(출처표시·변경금지)</strong>으로 제공되므로 출처 표시 후 원형 그대로 활용 가능합니다.
+        </p>
+
+        <!-- 1. 웹 서비스 -->
+        <div class="g-card">
+          <div class="g-card-head">
+            <span class="g-card-icon">🌐</span>
+            <span class="g-card-title">웹·모바일 서비스 삽입</span>
+            <span class="g-card-level lv-easy">입문</span>
+          </div>
+          <div class="g-card-body">
+            HTML 한 줄로 3D 뷰어를 웹페이지에 넣을 수 있습니다.
+            <br><span class="ok">✓</span> Google <code>&lt;model-viewer&gt;</code> 태그 사용 시 AR(증강현실)까지 자동 지원
+            <br><span class="ok">✓</span> iOS Safari → AR Quick Look, Android → Scene Viewer로 실물 크기 체험 가능
+            <br><span class="warn">△</span> 다기세트(PJE0000234)는 텍스처 없어 색상이 다르게 표현됨
+            <div class="tools">
+              <span class="g-tag">&lt;model-viewer&gt;</span>
+              <span class="g-tag">Three.js</span>
+              <span class="g-tag">Babylon.js</span>
+              <span class="g-tag">WebXR</span>
+              <span class="g-tag">A-Frame</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. 3D 프린트 -->
+        <div class="g-card">
+          <div class="g-card-head">
+            <span class="g-card-icon">🖨</span>
+            <span class="g-card-title">3D 프린트</span>
+            <span class="g-card-level lv-mid">중급</span>
+          </div>
+          <div class="g-card-body">
+            GLB를 직접 슬라이서에 넣을 수 없어 STL/3MF 변환이 필요합니다.
+            <br><span class="ok">✓</span> Blender에서 GLB 열기 → File › Export › STL로 변환
+            <br><span class="ok">✓</span> 기념정·피나투보 조각상은 단일 메시라 변환 후 바로 프린트 시도 가능
+            <br><span class="warn">△</span> 다기세트는 22개 분리 파츠 — 변환 후 슬라이서에서 파츠별 배치 필요
+            <br><span class="warn">△</span> 포토그래메트리 스캔본이라 내부가 비어있지 않을 수 있음 (Meshmixer에서 watertight 보정 권장)
+            <div class="tools">
+              <span class="g-tag">Blender (무료)</span>
+              <span class="g-tag">Meshmixer (무료)</span>
+              <span class="g-tag">PrusaSlicer</span>
+              <span class="g-tag">Cura</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. 게임엔진·메타버스 -->
+        <div class="g-card">
+          <div class="g-card-head">
+            <span class="g-card-icon">🎮</span>
+            <span class="g-card-title">게임엔진 · 메타버스</span>
+            <span class="g-card-level lv-mid">중급</span>
+          </div>
+          <div class="g-card-body">
+            GLB는 Unity·Unreal·Sketchfab이 모두 직접 임포트 지원하는 표준 포맷입니다.
+            <br><span class="ok">✓</span> Unity: Package Manager에서 glTF 패키지 설치 후 Assets에 드래그
+            <br><span class="ok">✓</span> Unreal Engine 5: glTF Importer 플러그인 활성화 후 임포트
+            <br><span class="ok">✓</span> Sketchfab, Mozilla Hubs, Spatial.io 등 메타버스 플랫폼 직접 업로드 가능
+            <br><span class="warn">△</span> 정점 수가 10~15만 개 수준으로 실시간 게임에 쓰려면 LOD 축소 권장
+            <div class="tools">
+              <span class="g-tag">Unity</span>
+              <span class="g-tag">Unreal Engine 5</span>
+              <span class="g-tag">Sketchfab</span>
+              <span class="g-tag">Spatial.io</span>
+              <span class="g-tag">Mozilla Hubs</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. 교육·영상 콘텐츠 -->
+        <div class="g-card">
+          <div class="g-card-head">
+            <span class="g-card-icon">🎬</span>
+            <span class="g-card-title">교육 · 영상 콘텐츠</span>
+            <span class="g-card-level lv-easy">입문</span>
+          </div>
+          <div class="g-card-body">
+            Blender에서 GLB를 열어 360° 턴테이블 영상, 단면 컷어웨이 애니메이션 등을 제작할 수 있습니다.
+            <br><span class="ok">✓</span> 수업자료·전시 보조영상으로 유물 실물을 대체 활용 가능
+            <br><span class="ok">✓</span> After Effects, Premiere에 Blender 렌더 영상 합성
+            <br><span class="ok">✓</span> PowerPoint 3D 개체 삽입(Windows) — GLB 직접 지원
+            <div class="tools">
+              <span class="g-tag">Blender (무료)</span>
+              <span class="g-tag">PowerPoint (Windows)</span>
+              <span class="g-tag">After Effects</span>
+              <span class="g-tag">DaVinci Resolve</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. 디지털 보존·연구 -->
+        <div class="g-card">
+          <div class="g-card-head">
+            <span class="g-card-icon">🔬</span>
+            <span class="g-card-title">디지털 보존 · 학술 연구</span>
+            <span class="g-card-level lv-hard">전문</span>
+          </div>
+          <div class="g-card-body">
+            포토그래메트리 스캔 메시를 학술 목적으로 분석·측정·변환할 수 있습니다.
+            <br><span class="ok">✓</span> CloudCompare로 포인트클라우드 변환 및 치수 측정 가능
+            <br><span class="ok">✓</span> IIIF 3D Working Group 표준 연계 — 국제 디지털 아카이브와 상호운용 기반
+            <br><span class="ok">✓</span> MeshLab으로 메시 품질 분석, Hausdorff 거리 측정
+            <br><span class="warn">△</span> 실측 스케일 메타데이터 없음 — 치수 계측 전 실물 참조 보정 필요
+            <div class="tools">
+              <span class="g-tag">CloudCompare (무료)</span>
+              <span class="g-tag">MeshLab (무료)</span>
+              <span class="g-tag">Blender</span>
+              <span class="g-tag">IIIF 3D</span>
+              <span class="g-tag">GIS 연계</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. AI·생성모델 -->
+        <div class="g-card">
+          <div class="g-card-head">
+            <span class="g-card-icon">🤖</span>
+            <span class="g-card-title">AI · 생성 모델 활용</span>
+            <span class="g-card-level lv-hard">전문</span>
+          </div>
+          <div class="g-card-body">
+            3D 스캔 메시를 AI 학습·생성 파이프라인의 입력 데이터로 사용할 수 있습니다.
+            <br><span class="ok">✓</span> NeRF(Neural Radiance Field) 재학습 입력 — 텍스처 내장 GLB는 멀티뷰 렌더로 활용 가능
+            <br><span class="ok">✓</span> 3D 생성 모델(Shap-E, Point-E 등) 파인튜닝 소재
+            <br><span class="ok">✓</span> Stable Diffusion ControlNet Depth 입력으로 텍스처 재생성
+            <br><span class="warn">△</span> 공공누리 제4유형 — AI 생성물 배포 시에도 원본 출처 표시 필요
+            <div class="tools">
+              <span class="g-tag">Blender + NeRF Studio</span>
+              <span class="g-tag">Shap-E</span>
+              <span class="g-tag">ControlNet</span>
+              <span class="g-tag">Instant-NGP</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="g-note">
+          <strong>📋 라이선스 필수 확인</strong><br>
+          모든 파일은 <strong>공공누리 제4유형(출처표시·변경금지)</strong>입니다.
+          출처(대통령기록관, pa.go.kr)를 반드시 표시하고, 파일 원형을 변경 없이 사용해야 합니다.
+          2차 가공(색상 변경, 메시 편집 등) 후 배포는 허용되지 않습니다.
+          상업적 이용 전 대통령기록관 담당부서 문의를 권장합니다.
+        </div>
+      </div>
+    </div>
+    </div><!-- /scroll-wrap -->
+
+  </div>
+  <div id="viewer">
+    <div id="loading"><div class="ring"></div><div class="ltext">전시실 입장 중</div></div>
+    <canvas id="cv"></canvas>
+    <div id="dim-badge">⚠ 치수는 데모용 예시값입니다 (실측 아님)</div>
+    <div class="dim-label" id="dim-h">높이</div>
+    <div class="dim-label" id="dim-w">폭</div>
+    <div id="caption"><div class="cap-title" id="cap-title">기념정</div><div class="cap-sub">Presidential Archives</div></div>
+    <div id="hint">
+      <div class="h-item"><span class="h-key">드래그</span>회전</div>
+      <div class="h-item"><span class="h-key">휠</span>확대</div>
+    </div>
+    <div id="rid">PED0000056</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+const ARTS = [
+  {id:"PAD0000023",glbFile:"PAD0000023.glb",cat:"선물 · 행정박물",title:"분청사기모란문병(粉靑沙器牡丹紋甁)",hanja:"",presInitial:"李",presName:"이승만 대통령",presTerm:"제1~3대 · 1948–1960",demoH:"",demoW:"",meta:[["건번호", "D000000100000371"]],feature:"",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=D000000100000371"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://www.pa.go.kr/files/giftgallery/thum_img/D000000100000371.jpg",imgs:["https://www.pa.go.kr/files/giftgallery/thum_img/D000000100000371.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PAD0000028",glbFile:"PAD0000028.glb",cat:"선물 · 행정박물",title:"옥조용통(玉彫龍筒)",hanja:"",presInitial:"李",presName:"이승만 대통령",presTerm:"제1~3대 · 1948–1960",demoH:"",demoW:"",meta:[["건번호", "D000000100000372"]],feature:"",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=D000000100000372"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://www.pa.go.kr/files/giftgallery/thum_img/D000000100000372.jpg",imgs:["https://www.pa.go.kr/files/giftgallery/thum_img/D000000100000372.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PAD0000026",glbFile:"PAD0000026.glb",cat:"선물 · 행정박물",title:"옥제호(玉製虎)",hanja:"",presInitial:"李",presName:"이승만 대통령",presTerm:"제1~3대 · 1948–1960",demoH:"",demoW:"",meta:[["건번호", "D000000100000376"]],feature:"",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=D000000100000376"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://www.pa.go.kr/files/giftgallery/thum_img/D000000100000376.jpg",imgs:["https://www.pa.go.kr/files/giftgallery/thum_img/D000000100000376.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PED0000056",glbFile:"PED0000056.glb",cat:"선물 · 행정박물",title:"기념정(記念釘)",hanja:"",presInitial:"朴",presName:"박정희 대통령",presTerm:"제5~9대 · 1963–1979",demoH:"",demoW:"",meta:[["증정국가", "한국, Korea"], ["증정인", "철도청()"], ["증정일", "1965"], ["건번호", "D000000100000351"]],feature:"1965.12.7. 진삼선 개통기념",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=D000000100000351"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://www.pa.go.kr/files/giftgallery/thum_img/D000000100000351.jpg",imgs:["https://www.pa.go.kr/files/giftgallery/thum_img/D000000100000351.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PEE0000036",glbFile:"PEE0000036.glb",cat:"선물 · 행정박물",title:"미국 육군사관학교 방문 기념패",hanja:"",presInitial:"朴",presName:"박정희 대통령",presTerm:"제5~9대 · 1963–1979",demoH:"",demoW:"",meta:[["증정국가", "미국, United States of America"], ["증정인", "미국 육군사관학교/United States Military Academy()"], ["증정일", "1965-05-21"], ["건번호", "E000000100000036"]],feature:"박정희 대통령은 1965년 5월 16일부터 27일까지 린든 존슨 대통령의 초청으로 미국을 공식 방문했다. 21일 웨스트 포인트 미육군사관학교를 방문하여 사관생도식당에서 오찬을 가졌다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000036"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081506437676532013353.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081506437676532013353.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081506452282456012139.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081506466498518017195.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081506483802329019687.jpg"],tours:[{"tourid": "1000006", "prstnm": "", "label": "미국, United States of America 해외순방 기록", "url": "https://pa.go.kr/portal/contents/stroll/diplomacy/diplomacyDetail.do?tourid=1000006&prstnm="}],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PEE0000051",glbFile:"PEE0000051.glb",cat:"선물 · 행정박물",title:"쌍석사자상",hanja:"",presInitial:"朴",presName:"박정희 대통령",presTerm:"제5~9대 · 1963–1979",demoH:"",demoW:"",meta:[["증정국가", "대만, Taiwan"], ["증정인", "장제스/蔣介石/장개석/Jiang Jieshi(직위: 대만 총통/재임기간: 1948.5.20~1949.1.21, 1950.3.1~1975.4.5)"], ["증정일", "1966-02-18"], ["건번호", "E000000100000051"]],feature:"박정희 대통령은 1966년 2월 7일부터 18일까지 동남아 4개국(말레이시아, 태국, 홍콩-비공식, 대만)을 순방했다. 15일, 17일 장제스 대만 총통과 두차례 정상회담을 가졌다. 대만측에선 옌자칸 행정원장, 장군 비서장, 심창환 외교부장, 장징궈 국방부장 등 정부요인 다수가 참석하였다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000051"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081508056707206018639.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081508056707206018639.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081508061948813014647.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081508065882315010705.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081508070696231016399.jpg"],tours:[{"tourid": "1000009", "prstnm": "", "label": "대만, Taiwan 해외순방 기록", "url": "https://pa.go.kr/portal/contents/stroll/diplomacy/diplomacyDetail.do?tourid=1000009&prstnm="}],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PEE0000011",glbFile:"PEE0000011.glb",cat:"선물 · 행정박물",title:"꽃잎 문양 은 접시",hanja:"",presInitial:"朴",presName:"박정희 대통령",presTerm:"제5~9대 · 1963–1979",demoH:"",demoW:"",meta:[["증정국가", "말레이시아, Malaysia"], ["증정인", "이스마일 압둘 라만/Ismail Abdul Rahman/다토 이스마일/Dato Ismail(직위: 말레이시아 2대 부총리2nd Deputy Prime Minister of Malaysia/생몰년: 1915.11.4~1973.8.2/재임기간: 1970.9.2~1973.8.2/약력: 내무상1962~1967)"], ["증정일", "1966-04-04"], ["건번호", "E000000100000011"]],feature:"다토 이스마일 말레이시아 내무 겸 법무상(內務,法務相)은 김형욱 중앙정보부장의 초청으로 1966년 4월 2일부터 9일까지 내한했다. 국왕의 특사 자격으로 내한한 다토 이스마일 내무상은 4월 4일 박정희 대통령을 예방했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000011"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081504261951824013357.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081504261951824013357.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081504281488751010238.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081504299186622016000.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081504327207946015592.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PEE0000033",glbFile:"PEE0000033.glb",cat:"선물 · 행정박물",title:"백마상",hanja:"",presInitial:"朴",presName:"박정희 대통령",presTerm:"제5~9대 · 1963–1979",demoH:"",demoW:"",meta:[["증정국가", "미국, United States of America"], ["증정인", "존슨, 린든/Johnson, Lyndon B./Johnson, Lyndon Baines(직위: 미국 36대 대통령36th President of the United States/재임기간: 1963.11.22~1969.1.20)"], ["증정일", "1966-11-01"], ["건번호", "E000000100000033"]],feature:"린든 존슨 미국 대통령은 1966년 10월 31일부터 11월 2일까지 박정희 대통령의 초청으로 방한했다. 1일 청와대 초청 만찬에 참석했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000033"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081506235856714015059.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081506235856714015059.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081506247929178019486.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081506260309888018228.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081506272480212011804.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PEE0000050",glbFile:"PEE0000050.glb",cat:"선물 · 행정박물",title:"은제 다기 세트",hanja:"",presInitial:"朴",presName:"박정희 대통령",presTerm:"제5~9대 · 1963–1979",demoH:"",demoW:"",meta:[["증정국가", "아랍에미리트, United Arab Emirates"], ["증정인", "모하메드 튜픽 오와이다/Mohammed Tewfik Oweida(직위: 아랍에미리트 최고회의 사무총장(Secretary General of the Arab Emirates))"], ["증정일", "1967-01-29"], ["건번호", "E000000100000050"]],feature:"모하메드 튜픽 오와이다 아랍에미리트 이슬람교 최고회의 사무총장은 1967년 1월 28일부터 2월 1일까지 방한했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000050"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081508047226407015651.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081508047226407015651.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081508034669999014029.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081508038468387014154.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081508043260446013310.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PEE0000116",glbFile:"PEE0000116.glb",cat:"선물 · 행정박물",title:"구로 수출산업공업단지 준공식 기념패",hanja:"",presInitial:"朴",presName:"박정희 대통령",presTerm:"제5~9대 · 1963–1979",demoH:"",demoW:"",meta:[["증정국가", "한국, Korea"], ["증정인", "구로구 수출산업공단()"], ["증정일", "1967-04-01"], ["건번호", "E000000100000116"]],feature:"박정희 대통령은 1967년 4월 1일 서울 영등포구 구로동 수출산업공업단지 준공식에 참석하였다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000116"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081512013870579017527.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081512013870579017527.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081512017969242010234.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081512022694356011281.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081512026948108018762.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PEE0000118",glbFile:"PEE0000118.glb",cat:"선물 · 행정박물",title:"용 문양 철제 화병",hanja:"",presInitial:"朴",presName:"박정희 대통령",presTerm:"제5~9대 · 1963–1979",demoH:"",demoW:"",meta:[["증정국가", "대만, Taiwan"], ["증정인", "장징궈/蔣經國/장경국/Jiang Jingguo(직위: 대만 국방부장/생몰년: 1910.4.27-1988.1.13/재임기간: 1965-1969/약력: 아버지(장제스), 제7대 대만 총통(1984~1988.01), 제6대 대만 총통(1978.05~1984), 중국 국민당 중앙집행위원회 위원장(1975.04~1988.01))"], ["증정일", "1969-02-25"], ["건번호", "E000000100000118"]],feature:"장징궈 대만 국방부장은 1969년 2월 24일부터 28일까지 방한하여, 25일 박정희 대통령을 접견하고 장제스 총통의 친서를 전달했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000118"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081512077235740016891.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081512077235740016891.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PEE0000018",glbFile:"PEE0000018.glb",cat:"선물 · 행정박물",title:"박정희 대통령 생일 기념 접시",hanja:"",presInitial:"朴",presName:"박정희 대통령",presTerm:"제5~9대 · 1963–1979",demoH:"",demoW:"",meta:[["증정국가", "미국, United States of America"], ["증정인", "매케인, 주니어 존 시드니/McCain, Jr., John Sidney(직위: 7대 미태평양지구 총사령관Commander of U.S. Pacific Command/생몰년: 1911.1.17~1981.3.22/재임기간: 1968.7.31~1972.9.1/약력: 미상원의원 존 시드니 매케인John Sidney McCain의 아버지)"], ["증정일", "1969-10-04"], ["건번호", "E000000100000018"]],feature:"얼 휠러(Earle G. Wheeler) 미합참의장 일행은 1969년 10월 2일 국방부는 국군의 날 경축사절 참석차 내한했다. 박정희 대통령은 미군수뇌와 한미고위군사회담을 열었고 미국측 대표로 동행한 태평양지구사령관 존 매케인 제독은 1등보국훈장을 수여받았다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000018"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081505152217985010150.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081505152217985010150.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081505165618383012220.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081505179780040019269.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081505196213856011374.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PEE0000042",glbFile:"PEE0000042.glb",cat:"선물 · 행정박물",title:"국군의 날 행사 방한 기념 접시",hanja:"",presInitial:"朴",presName:"박정희 대통령",presTerm:"제5~9대 · 1963–1979",demoH:"",demoW:"",meta:[["증정국가", "태국, Thailand"], ["증정인", "렉 내오말리/Lek Naeomali(직위: 태국 최고사령관, 참모총장(Chief of Staff, Office of Supreme Commander, Royal Thai Armed Force))"], ["증정일", "1971-10-01"], ["건번호", "E000000100000042"]],feature:"렉 내오말리 태국 장군은 1971년 10월 1일 국군의 날 행사에 초청되었다. 각국 외빈들과 함께 박정희 대통령을 접견했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000042"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081507197955381013260.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081507197955381013260.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081507210997923016788.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081507225085400019532.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081507238028534017939.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PEE0000045",glbFile:"PEE0000045.glb",cat:"선물 · 행정박물",title:"미국 괌 도지사 방한 기념패",hanja:"",presInitial:"朴",presName:"박정희 대통령",presTerm:"제5~9대 · 1963–1979",demoH:"",demoW:"",meta:[["증정국가", "미국, United States of America"], ["증정인", "카마초, 카를로스/Camacho, Carlos G.(직위: 미국 괌 도지사Governor of Guam, U.S.A)"], ["증정일", "1971-10-25"], ["건번호", "E000000100000045"]],feature:"카를로스 카마초 미국 괌 도지사는 상공부장관 초청으로 1971년 10월 22일부터 26일까지 방한했다. 25일 박정희 대통령을 예방했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000045"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081507343789339011364.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081507343789339011364.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081507358087905019091.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081507372183666014338.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081507385178930010779.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PEE0000044",glbFile:"PEE0000044.glb",cat:"선물 · 행정박물",title:"한미 1군단 시찰 기념패",hanja:"",presInitial:"朴",presName:"박정희 대통령",presTerm:"제5~9대 · 1963–1979",demoH:"",demoW:"",meta:[["증정국가", "미국, United States of America"], ["증정인", "놀스, 리처드/Knowles, Richard T.(직위: 한미 1군단장, 미국 육군 중장Lieutenant General, USA)"], ["증정일", "1972-12-21"], ["건번호", "E000000100000044"]],feature:"박정희 대통령은 1972년 12월 21일 연말을 맞아 전방에 위치한 군부대를 시찰했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000044"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081507282584601011823.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081507282584601011823.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081507295667376012873.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081507308277839015387.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081507321155207012606.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PEE0000115",glbFile:"PEE0000115.glb",cat:"선물 · 행정박물",title:"꽃문양 은제 담배 용구",hanja:"",presInitial:"朴",presName:"박정희 대통령",presTerm:"제5~9대 · 1963–1979",demoH:"",demoW:"",meta:[["증정국가", "튀니지, Tunisia"], ["증정인", "하비브 샤티/Habib Chatty(직위: 튀니지 외무장관(Minister of Foreign Affairs of Tunisia)/생몰년: 1916.8.9-1991.3.6/재임기간: 1974-1977)"], ["증정일", "1974-07-20"], ["건번호", "E000000100000115"]],feature:"하비브 샤티 튀니지 외무장관이 김동조 외무장관 초청으로 1974년 7월 19일부터 21일까지 방한했다. 샤티 외무장관은 7월 20일 박정희 대통령, 김종필 국무총리, 김동조 외무장관 등 정부지도자들과 만나 한 튀니지 간의 우호증진 문제를 논의했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000115"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081511555900377012274.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081511555900377012274.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081511572315384019222.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081511586876954016444.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PEE0000069",glbFile:"PEE0000069.glb",cat:"선물 · 행정박물",title:"화초와 물고기 문양이 있는 도금 주전자",hanja:"",presInitial:"朴",presName:"박정희 대통령",presTerm:"제5~9대 · 1963–1979",demoH:"",demoW:"",meta:[["증정국가", "사우디아라비아, Saudi Arabia"], ["증정인", "나와프 빈 압둘 아지즈/Nawaf bin Abdul Aziz(직위: 사우디아라비아 왕자(Prince of Saudi Arabia))"], ["증정일", "1975-06-02"], ["건번호", "E000000100000069"]],feature:"1975년 5월 26일부터 6월 3일까지 건설부장관의 초청으로 방한한 사우디아라비아 나와프 빈 압둘 아지즈 왕자는 6월 2일 박정희 대통령를 예방하였다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000069"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081509144841088011925.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081509144841088011925.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081509148547368010298.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081509152580042014395.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081509157124611013523.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PED0000022",glbFile:"PED0000022.glb",cat:"선물 · 행정박물",title:"기념패(記念牌)",hanja:"",presInitial:"朴",presName:"박정희 대통령",presTerm:"제5~9대 · 1963–1979",demoH:"",demoW:"",meta:[["증정국가", "미국"], ["증정인", "미군 Richard Gils Stilwell(제15대 주한 유엔군 총사령관 겸 제16대 주한 미8군 사령관)()"], ["증정일", "1976"], ["건번호", "D000000100000317"]],feature:"1976년 8월 21일 미군 Richard Gils Stilwell(제15대 주한 유엔군 총사령관 겸 제16대 주한 미8군 사령관) 선물",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=D000000100000317"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://www.pa.go.kr/files/giftgallery/thum_img/D000000100000317.jpg",imgs:["https://www.pa.go.kr/files/giftgallery/thum_img/D000000100000317.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PEE0000041",glbFile:"PEE0000041.glb",cat:"선물 · 행정박물",title:"국화 문양 은 쟁반",hanja:"",presInitial:"朴",presName:"박정희 대통령",presTerm:"제5~9대 · 1963–1979",demoH:"",demoW:"",meta:[["증정국가", "리비아, Libyan Arab Jamahiriya"], ["증정인", "마무드 수부히/Mahmoud Subuhi(직위: 리비아 카다피 대통령 종교담당 고문/약력: 리비아 상원부의장, 무슬림선교회 회장)"], ["증정일", "1976-05-29"], ["건번호", "E000000100000041"]],feature:"리비아 대통령고문 마하무드 수부히는 이슬람교 중앙성원 개원식 참석차 1976년 5월 19일부터 26일까지 방한했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000041"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081507107815788012834.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081507107815788012834.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081507122132364013639.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081507139321511016828.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081507166533947013957.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PEE0000119",glbFile:"PEE0000119.glb",cat:"선물 · 행정박물",title:"용 문양 철제 항아리",hanja:"",presInitial:"朴",presName:"박정희 대통령",presTerm:"제5~9대 · 1963–1979",demoH:"",demoW:"",meta:[["증정국가", "대만, Taiwan"], ["증정인", "장옌스/蔣彦士/장언사/Jiang Yanshi(직위: 대만 교육부장敎育部長/재임기간: 1975~1977)"], ["증정일", "1977-03-21"], ["건번호", "E000000100000119"]],feature:"장옌스 대만 교육부장은 1977년 3월 15일부터 21일까지 대만 타이페이시 국립역사박물관에서 열린 김봉룡 나전칠예전(金奉龍 螺鈿漆藝展)에서김봉룡 옹에게 중국칠기전통을 전수받기 희망한다고 언급했다. 항아리는 이때 간접적으로 증정되었을 것으로 추정한다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000119"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081512113451167016183.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081512113451167016183.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081512128195741011085.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081512142954274010582.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081512157983903015911.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PEE0000103",glbFile:"PEE0000103.glb",cat:"선물 · 행정박물",title:"은제 담배함",hanja:"",presInitial:"朴",presName:"박정희 대통령",presTerm:"제5~9대 · 1963–1979",demoH:"",demoW:"",meta:[["증정국가", "과테말라, Guatemala"], ["증정인", "오란테스, 아돌프 몰리나/Orantes, Adolfo Molina(직위: 과테말라 외상Minister of Foreign Affairs of Guatemala)"], ["증정일", "1977-03-25"], ["건번호", "E000000100000103"]],feature:"아돌프 몰리나 오란테스 과테말라 외상은 1977년 3월 24일부터 27일까지 박동진 외무장관의 초청으로 내한하여 3월 25일 박정희 대통령을 예방했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000103"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081511129659631012719.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081511129659631012719.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081511138289327013511.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081511145805460019956.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081511154888401016784.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PEE0000043",glbFile:"PEE0000043.glb",cat:"선물 · 행정박물",title:"은제 담배함",hanja:"",presInitial:"朴",presName:"박정희 대통령",presTerm:"제5~9대 · 1963–1979",demoH:"",demoW:"",meta:[["증정국가", "콜롬비아, Colombia"], ["증정인", "로페스 고메스, 에드문도/Lopez Gomez, Edmundo(직위: 콜롬비아 상원의원(President of the Senate of the Colombia)/재임기간: 1976~1977)"], ["증정일", "1977-05-12"], ["건번호", "E000000100000043"]],feature:"에드문도 로페스 고메스 콜롬비아 상원의장 내외는 1977년 5월 11일부터 14일까지 정일권 국회의장의 초청으로 방한했다. 5월 12일 청와대에서 박정희 대통령을 접견하고 수교훈장 광화장을 수여받았다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000043"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081507259249448015388.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081507259249448015388.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081507263047561018002.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081507266442044010508.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081507270608851018638.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PED0000051",glbFile:"PED0000051.glb",cat:"선물 · 행정박물",title:"기념패(記念牌)",hanja:"",presInitial:"朴",presName:"박정희 대통령",presTerm:"제5~9대 · 1963–1979",demoH:"",demoW:"",meta:[["증정국가", "한국, Korea"], ["증정인", "한국 기능 올림픽위원장 의장 이락선()"], ["증정일", "1979"], ["건번호", "D000000100000346"]],feature:"한국 기능 올림픽위원장 의장 이락선 기증",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=D000000100000346"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://www.pa.go.kr/files/giftgallery/thum_img/D000000100000346.jpg",imgs:["https://www.pa.go.kr/files/giftgallery/thum_img/D000000100000346.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PFE0000012",glbFile:"PFE0000012.glb",cat:"선물 · 행정박물",title:"둥근 나무 함지",hanja:"",presInitial:"崔",presName:"최규하 대통령",presTerm:"제10대 · 1979–1980",demoH:"",demoW:"",meta:[["증정국가", "파푸아뉴기니, Papua New Guinea"], ["증정인", "키키, 앨버트 마오리/Kiki, Albert Maori(직위: 파푸아뉴기니 부총리(Deputy prime minister of Papua New Guinea)/생몰년: 1931.9.21-1993/재임기간: 1975-1977)"], ["증정일", "1976-11-13"], ["건번호", "E000000100000287"]],feature:"(1) 파푸아뉴기니의 부총리 겸 외무통상장관 겸 국방장관인 앨버트 마오리 키키경이 박동진 외무장관의 초청으로 1976년 11월 12일부터 17일까지 방한했다. 11월 13일 최규하 국무총리는 키키 경을 접견, 환담을 나누었다. (2) 파푸아뉴기니의 부총리 겸 1차 산업상 줄리어스 찬 경은 1978년 6월 25일부터 7월 3일까지 머물면서 최규하 국무총리를 비롯한 각부 장관을 만났다. 파푸아뉴기니 부총리와의 접견 사실이 2건이므로, 첫번째 방문시 선물을 수령한 것으로 추정한다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000287"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081522277901353011712.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081522277901353011712.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081522285298758016072.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081522293292330019444.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081522301448486018059.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PFE0000016",glbFile:"PFE0000016.glb",cat:"선물 · 행정박물",title:"흑단 부처 목각 인형 라마",hanja:"",presInitial:"崔",presName:"최규하 대통령",presTerm:"제10대 · 1979–1980",demoH:"",demoW:"",meta:[["증정국가", "인도네시아, Indonesia"], ["증정인", "미상()"], ["증정일", "1979-05-07"], ["건번호", "E000000100000291"]],feature:"최규하 국무총리는 1979년 5월 7일부터 10일까지 동남아 순방의 일환으로 인도네시아를 방문했다. 정확한 기증자는 알 수 없으나 이때 기증받은 것으로 추정할수 있다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000291"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081522404729835017698.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081522404729835017698.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081522412079260019415.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081522419726306017032.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081522427115300011143.jpg"],tours:[],spacePreset:{"bgBase": "#161714", "bgGrad0": "#33332c", "bgGrad1": "#1c1c18", "bgGrad2": "#0a0a08", "fog": 657928, "envGrad0": "#3a3a32", "envGrad1": "#222018", "envGrad2": "#0d0c0a", "envBand0": "rgba(233,225,206,0)", "envBand1": "rgba(233,225,206,0.55)", "floor": 1315599, "wall": 3815209, "band": 13090467, "star": 15262677},lightPreset:{"amb": [15327694, 0.16], "key": [15525074, 3.6], "fill": [12168854, 0.42]},materialPreset:{"tint": [0.8, 0.75, 0.68], "roughness": null, "metalness": null}},
+  {id:"PHE0000145",glbFile:"PHE0000145.glb",cat:"선물 · 행정박물",title:"독수리 문양 은 쟁반",hanja:"",presInitial:"全",presName:"전두환 대통령",presTerm:"제11~12대 · 1980–1988",demoH:"",demoW:"",meta:[["증정국가", "리비아, Libyan Arab Jamahiriya"], ["증정인", "무하마드 아마드 알망구시/Muhammad Ahmad Al-Mangoush(직위: 리비아 총리(Prime Minister of Libya)/재임기간 : 1997~2000/약력: 주택장관)"], ["증정일", "1981-08-18"], ["건번호", "E000000100000450"]],feature:"리비아 무하마드 아마드 알 망구시 주택장관은 1981년 8월 18일 전두환 대통령을 예방하고 교훈장 광화대장(光化大章, Grand Gwanghwa Medal)을 수여받았다. 이후 외무장관 실무회담에서 한국-리비아간 공동위 설립 및 경제,과학,기술협력협정 추진에 관한 양해각서를 체결했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000450"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081528451803114013116.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081528451803114013116.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PHE0000007",glbFile:"PHE0000007.glb",cat:"선물 · 행정박물",title:"황동 인물상(청동주조기술로 유명한 나이지리아 베냉왕국의 왕으로 추정)",hanja:"",presInitial:"全",presName:"전두환 대통령",presTerm:"제11~12대 · 1980–1988",demoH:"",demoW:"",meta:[["증정국가", "나이지리아, Nigeria"], ["증정인", "샤가리, 세후 후스만 알리유/Shagari, Shehu Usman Aliyu/Shehu Usman Aliyu Shagari(직위: 나이지리아 제6대 대통령(6th President of Nigeria))"], ["증정일", "1982-08-19"], ["건번호", "E000000100000312"]],feature:"전두환 대통령은 1982년 8월 17일부터 8월 31일까지 아프리카의 케냐, 나이지리아, 가봉, 세네갈 4개국과 캐나다를 순방하고 정상회담을 가졌다. 19일 오후 나이지리아 샤가리 대통령과 정상회담을 가졌다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000312"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081523545774783019852.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081523545774783019852.jpg"],tours:[{"tourid": "1000024", "prstnm": "", "label": "나이지리아, Nigeria 해외순방 기록", "url": "https://pa.go.kr/portal/contents/stroll/diplomacy/diplomacyDetail.do?tourid=1000024&prstnm="}],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PHE0000030",glbFile:"PHE0000030.glb",cat:"선물 · 행정박물",title:"가봉 리브르빌 시청 방문 기념 행운의 열쇠",hanja:"",presInitial:"全",presName:"전두환 대통령",presTerm:"제11~12대 · 1980–1988",demoH:"",demoW:"",meta:[["증정국가", "가봉, Gabon"], ["증정인", "오밤, 온투톱(직위: 가봉 리브르빌시장mayor of Libreville)"], ["증정일", "1982-08-23"], ["건번호", "E000000100000335"]],feature:"전두환 대통령 내외는 1982년 8월 17일부터 8월 31일까지 아프리카의 케냐, 나이지리아, 가봉, 세네갈 4개국과 캐나다를 순방하고 정상회담을 가졌다. 23일 가봉 리브르빌 시청을 방문하여 온투톱 오밤 시장을 비롯한 시의회의원및 시청간부들과 간담을 나누었다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000335"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081524427757997016568.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081524427757997016568.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081524431430451014045.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081524436009593018693.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081524439794729018266.jpg"],tours:[{"tourid": "1000025", "prstnm": "", "label": "가봉, Gabon 해외순방 기록", "url": "https://pa.go.kr/portal/contents/stroll/diplomacy/diplomacyDetail.do?tourid=1000025&prstnm="}],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PHE0000136",glbFile:"PHE0000136.glb",cat:"선물 · 행정박물",title:"은제 향로 세트",hanja:"",presInitial:"全",presName:"전두환 대통령",presTerm:"제11~12대 · 1980–1988",demoH:"",demoW:"",meta:[["증정국가", "튀니지, Tunisia"], ["증정인", "모하메드 므잘리/Mohammed Mzali(직위: 튀니지 수상(Prime Minister of Tunisia))"], ["증정일", "1984-10-26"], ["건번호", "E000000100000441"]],feature:"모하메드 므잘리 튀니지 수상은 1984년 10월 24일부터 26일까지 방한하였다. 26일 청와대에서 전두환 대통령 내외를 접견하고 수교훈장 광화대장을 수여받았다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000441"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081528267187468015602.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081528267187468015602.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PHE0000098",glbFile:"PHE0000098.glb",cat:"선물 · 행정박물",title:"상아로 된 얼굴 조각",hanja:"",presInitial:"全",presName:"전두환 대통령",presTerm:"제11~12대 · 1980–1988",demoH:"",demoW:"",meta:[["증정국가", "중앙아프리카공화국, Central African Republic"], ["증정인", "콜링바, 앙드레-디유돈느/Kolingba, Andre-Dieudonne(직위: 중앙아프리카공화국 대통령President of the Central African Republic/생몰년: 1936~/재임기간: 1981.9.1~1993.10.1)"], ["증정일", "1986-06-11"], ["건번호", "E000000100000403"]],feature:"콜링바 중앙아프리카공화국 대통령 내외는 1986년 6월 10일부터 13일까지 전두환 대통령의 초청으로 우리나라를 공식 방문했다. 6월 11일 오전 청와대에서 전두환 대통령과 정상회담을 가졌다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000403"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081527033772775010396.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081527033772775010396.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PHE0000132",glbFile:"PHE0000132.glb",cat:"선물 · 행정박물",title:"아프리카 혹멧돼지[Warthog] 이빨 조각으로 만든 모자이크판",hanja:"",presInitial:"全",presName:"전두환 대통령",presTerm:"제11~12대 · 1980–1988",demoH:"",demoW:"",meta:[["증정국가", "중앙아프리카공화국, Central African Republic"], ["증정인", "콜링바, 앙드레-디유돈느/Kolingba, Andre-Dieudonne(직위: 중앙아프리카공화국 대통령President of the Central African Republic/생몰년: 1936~/재임기간: 1981.9.1~1993.10.1)"], ["증정일", "1986-06-11"], ["건번호", "E000000100000437"]],feature:"콜링바 중앙아프리카공화국 대통령 내외는 1986년 6월 10일부터 13일까지 전두환 대통령의 초청으로 우리나라를 공식 방문했다. 6월 11일 오전 청와대에서 전두환 대통령과 정상회담을 가졌다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000437"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081528172600196011982.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081528172600196011982.jpg"],tours:[],spacePreset:{"bgBase": "#161714", "bgGrad0": "#33332c", "bgGrad1": "#1c1c18", "bgGrad2": "#0a0a08", "fog": 657928, "envGrad0": "#3a3a32", "envGrad1": "#222018", "envGrad2": "#0d0c0a", "envBand0": "rgba(233,225,206,0)", "envBand1": "rgba(233,225,206,0.55)", "floor": 1315599, "wall": 3815209, "band": 13090467, "star": 15262677},lightPreset:{"amb": [15327694, 0.16], "key": [15525074, 3.6], "fill": [12168854, 0.42]},materialPreset:{"tint": [0.8, 0.75, 0.68], "roughness": null, "metalness": null}},
+  {id:"PHE0000105",glbFile:"PHE0000105.glb",cat:"선물 · 행정박물",title:"꽃잎 모양 금 브로치",hanja:"",presInitial:"全",presName:"전두환 대통령",presTerm:"제11~12대 · 1980–1988",demoH:"",demoW:"",meta:[["증정국가", "코모로, Comoros"], ["증정인", "아메드 압달라/Ahmed Abdallah(직위: 코모로 대통령(President of Comoros)/생몰년: 1919.6.12~1989.11.26/재임기간: 1978.10.25~1989.11.26)"], ["증정일", "1987-04-07"], ["건번호", "E000000100000410"]],feature:"아메드 압달라 코모로 대통령은 1987년 4월 6일부터 9일까지 전두환 대통령의 초청으로 우리나라를 공식 방문하였다. 7일 청와대에서 전두환 대통령과 정상회담을 갖고, 국가간 공동관심사와 우호협력증진 방안에 관해 협의했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000410"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081527181733526012108.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081527181733526012108.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081527196580311015994.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081527212598454019853.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081527227115882012994.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(245,243,238,0)", "envBand1": "rgba(245,243,238,0.5)", "floor": 1315599, "wall": 3815215, "band": 13090467, "star": 16118766},lightPreset:{"amb": [16118766, 0.28], "key": [16775920, 5.2], "fill": [15789280, 0.6]},materialPreset:{"tint": null, "roughness": 0.25, "metalness": 0.05}},
+  {id:"PIE0000070",glbFile:"PIE0000070.glb",cat:"선물 · 행정박물",title:"손바닥으로 감싼 모양의 석상",hanja:"",presInitial:"盧",presName:"노태우 대통령",presTerm:"제13대 · 1988–1993",demoH:"",demoW:"",meta:[["증정국가", "케냐, Kenya"], ["증정인", "모이, 다니엘 아랍/Moi, Daniel T. arap.(직위: 케냐 2대 대통령(President of Kenya)/재임기간: 1978. 8. 22~2002.12.30)"], ["증정일", "1990-09-17"], ["건번호", "E000000100000592"]],feature:"다니엘 아랍 모이 케냐 대통령은 1990년 9월 17일부터 9월 20일까지 노태우 대통령의 초청으로 공식 방한하였다. 17일 오후 청와대에서 정상회담을 갖고 국제무대에서의 상호협력 문제와 양국간 실질협력증진방안을 논의하였다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000592"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081533289903438013218.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081533289903438013218.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PIE0000089",glbFile:"PIE0000089.glb",cat:"선물 · 행정박물",title:"철제 독수리 조각상",hanja:"",presInitial:"盧",presName:"노태우 대통령",presTerm:"제13대 · 1988–1993",demoH:"",demoW:"",meta:[["증정국가", "미국, United States of America"], ["증정인", "체니, 딕 /Cheney, Dick /Richard Bruce Cheney/리처드 체니(직위: 미국 국방장관/재임기간: 1989.3.21~1993.1.20/약력 : 미국 부통령(2001.1.20~2009.1.20))"], ["증정일", "1991-07-03"], ["건번호", "E000000100000611"]],feature:"노태우 대통령은 1991년 6월 29일부터 7월 7일까지 정상회담을 위해 미국, 캐나다를 공식 방문했다. 7월 3일 주미한국대사관저에서 퀘일 부통령 초청 오찬에 참석하였고, 딕 체니 국방장관을 접견하였다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000611"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081534088887872014083.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081534088887872014083.jpg"],tours:[{"tourid": "1000051", "prstnm": "", "label": "미국, United States of America 해외순방 기록", "url": "https://pa.go.kr/portal/contents/stroll/diplomacy/diplomacyDetail.do?tourid=1000051&prstnm="}],spacePreset:{"bgBase": "#161714", "bgGrad0": "#33332c", "bgGrad1": "#1c1c18", "bgGrad2": "#0a0a08", "fog": 657928, "envGrad0": "#3a3a32", "envGrad1": "#222018", "envGrad2": "#0d0c0a", "envBand0": "rgba(233,225,206,0)", "envBand1": "rgba(233,225,206,0.55)", "floor": 1315599, "wall": 3815209, "band": 13090467, "star": 15262677},lightPreset:{"amb": [15327694, 0.16], "key": [15525074, 3.6], "fill": [12168854, 0.42]},materialPreset:{"tint": [0.8, 0.75, 0.68], "roughness": null, "metalness": null}},
+  {id:"PIE0000093",glbFile:"PIE0000093.glb",cat:"선물 · 행정박물",title:"새끼를 업은 바다코끼리 동석[Steatite] 조각",hanja:"",presInitial:"盧",presName:"노태우 대통령",presTerm:"제13대 · 1988–1993",demoH:"",demoW:"",meta:[["증정국가", "캐나다, Canada"], ["증정인", "멀로니, 브라이언/Mulroney, Brian(직위: 캐나다 18대 수상(Prime Minister of Canada)/생몰년: 1939.3.20~/재임기간: 1984.9.17~1993.6.25)"], ["증정일", "1991-07-03"], ["건번호", "E000000100000615"]],feature:"노태우 대통령은 1991년 6월29일부터 7월7일까지 정상회담을 위해 미국, 캐나다를 공식 방문했다. 7월 3일 캐나다 오타와에서 캐나다 브라이언 멀루니 수상과 정상회담을 했고, 이어 총독이 주재한 만찬에 참석했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000615"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081534154999124017247.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081534154999124017247.jpg"],tours:[{"tourid": "1000050", "prstnm": "", "label": "캐나다, Canada 해외순방 기록", "url": "https://pa.go.kr/portal/contents/stroll/diplomacy/diplomacyDetail.do?tourid=1000050&prstnm="}],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PJE0000019",glbFile:"PJE0000019.glb",cat:"선물 · 행정박물",title:"이누이트인알래스카 원주민, 에스키모인 동석[Steatite] 조각",hanja:"",presInitial:"金",presName:"김영삼 대통령",presTerm:"제14대 · 1993–1998",demoH:"",demoW:"",meta:[["증정국가", "미국, United States of America"], ["증정인", "힉켈, 월터 조셉/Hickel, Walter Joseph(직위: 미국 알래스카 주지사8th Governor of Alaska/생몰년: 1919.8.18~/재임기간: 1990.12.3~1994.12.5/약력: 미국 알래스카 주시사1966.12.5~1969.1.24)"], ["증정일", "1993-05-20"], ["건번호", "E000000100000682"]],feature:"월터 힉켈 미국 알래스카 주지사는 1993년 5월 20일 한-미 경제협의회로부터 초청을 받아 한국을 방문했다. 월터 힉켈 주지사는 이날 오전 서울 인터컨티넨탈 호텔에서 한-알래스카 경제협력 약정을 체결하고 양측 경협방안을 협의했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000682"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081536456365148018597.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081536456365148018597.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081536460299126018518.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081536464522051016749.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081536468702053015342.jpg"],tours:[],spacePreset:{"bgBase": "#161714", "bgGrad0": "#33332c", "bgGrad1": "#1c1c18", "bgGrad2": "#0a0a08", "fog": 657928, "envGrad0": "#3a3a32", "envGrad1": "#222018", "envGrad2": "#0d0c0a", "envBand0": "rgba(233,225,206,0)", "envBand1": "rgba(233,225,206,0.55)", "floor": 1315599, "wall": 3815209, "band": 13090467, "star": 15262677},lightPreset:{"amb": [15327694, 0.16], "key": [15525074, 3.6], "fill": [12168854, 0.42]},materialPreset:{"tint": [0.8, 0.75, 0.68], "roughness": null, "metalness": null}},
+  {id:"PJE0000087",glbFile:"PJE0000087.glb",cat:"선물 · 행정박물",title:"뚜껑있는 사각 도자기 함",hanja:"",presInitial:"金",presName:"김영삼 대통령",presTerm:"제14대 · 1993–1998",demoH:"",demoW:"",meta:[["증정국가", "포르투갈, Portugal"], ["증정인", "소아레스, 마리우 알베르투 노브르 로페스/Soares, Mario Alberto Nobre Lopes(직위: 포르투갈 17대 대통령18th President of Portugal/생몰년: 1924.12.7~/재임기간: 1986.3.9~1996.3.9/약력: 107대 수상1976.7.23~1978.8.28, 114대 수상1983.6.9~1985.11.6)"], ["증정일", "1993-10-15"], ["건번호", "E000000100000750"]],feature:"마리우 소아레스 포르투갈 대통령은 1993년 10월 15일부터 10월 18일까지 대전EXPO 포르투갈의 날 행사에 참석하기 위해 한국을 방문하여 첫날 김영삼 대통령을 예방했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000750"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081539254588934014644.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081539254588934014644.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081539258751815017608.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081539262856208015472.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081539267139540018552.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PJE0000166",glbFile:"PJE0000166.glb",cat:"선물 · 행정박물",title:"연어를 입에 문 곰 동석[Steatite] 조각",hanja:"",presInitial:"金",presName:"김영삼 대통령",presTerm:"제14대 · 1993–1998",demoH:"",demoW:"",meta:[["증정국가", "미국, United States of America"], ["증정인", "핑크, 톰/Fink, Tom(직위: 미국 알래스카주 앵커리지 시장Mayor of Anchorage, 재임기간 : 1987~1994)"], ["증정일", "1993-11-24"], ["건번호", "E000000100000829"]],feature:"김영삼 대통령은 1993년 11월 17일부터 25일까지 정상회담 및 아시아-태평양경제협력체(APEC) 정상회의 참석을 위하여 미국을 공식 방문했다. 24일 워싱턴을 떠나 중간기착지인 앵커리지에 잠시 머무는 동안 공항내 대한항공 귀빈실에서 월터 힉켈 주지사와 톰 핑크 앵커리지 시장을 접견했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000829"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081542363230072019447.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081542363230072019447.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081542367918482011561.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081542372476806019385.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081542377067270019324.jpg"],tours:[{"tourid": "1000053", "prstnm": "", "label": "미국, United States of America 해외순방 기록", "url": "https://pa.go.kr/portal/contents/stroll/diplomacy/diplomacyDetail.do?tourid=1000053&prstnm="}],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(245,243,238,0)", "envBand1": "rgba(245,243,238,0.5)", "floor": 1315599, "wall": 3815215, "band": 13090467, "star": 16118766},lightPreset:{"amb": [16118766, 0.28], "key": [16775920, 5.2], "fill": [15789280, 0.6]},materialPreset:{"tint": null, "roughness": 0.25, "metalness": 0.05}},
+  {id:"PJE0000167",glbFile:"PJE0000167.glb",cat:"선물 · 행정박물",title:"1991년 폭발한 필리핀 피나투보[Pinatubo] 화산암으로 만든 춤추는 어린이 조각상",hanja:"",presInitial:"金",presName:"김영삼 대통령",presTerm:"제14대 · 1993–1998",demoH:"",demoW:"",meta:[["증정국가", "필리핀, Philippines"], ["증정인", "아키노, 코라손/Aquino, Corazon/Aquino, Maria Corazon C.(직위: 필리핀 11대 대통령11th President of the Philippines/생몰년: 1933.1.25~2009.8.1/재임기간: 1986.2.25~1992.6.30)"], ["증정일", "1994-01-28"], ["건번호", "E000000100000830"]],feature:"김영삼 대통령은 1994년 1월 29일 코라손 아키노 전 필리핀대통령의 예방을 받고 민주발전과 개혁정책, 두나라의 관계발전 방안에 관해 의견을 교환했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000830"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081542389289300017699.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081542389289300017699.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081542393617388018705.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081542397290492015073.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081542401146741016172.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PJE0000196",glbFile:"PJE0000196.glb",cat:"선물 · 행정박물",title:"중국 안양 출토 갑골문 복제품",hanja:"",presInitial:"金",presName:"김영삼 대통령",presTerm:"제14대 · 1993–1998",demoH:"",demoW:"",meta:[["증정국가", "중국, China"], ["증정인", "주소화(직위: 중국 하남성 무안채 국민학교 학생)"], ["증정일", "1994-03-29"], ["건번호", "E000000100000859"]],feature:"김영삼 대통령은 1994년 3월 26일부터 30일까지 중국을 방문했다. 29일 중국 하남성 무안채 국민학교에 다니는 주소화군과 만났다. 김대통령이 만난 이 어린이는 지난해 2월 김대통령에게 취임축하편지와 함께 축하의 뜻으로 참외 씨앗을 보냈다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000859"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081543462550531019865.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081543462550531019865.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081543466588536010609.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081543470319818017879.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081543474226163012304.jpg"],tours:[{"tourid": "1000055", "prstnm": "", "label": "중국, China 해외순방 기록", "url": "https://pa.go.kr/portal/contents/stroll/diplomacy/diplomacyDetail.do?tourid=1000055&prstnm="}],spacePreset:{"bgBase": "#161714", "bgGrad0": "#33332c", "bgGrad1": "#1c1c18", "bgGrad2": "#0a0a08", "fog": 657928, "envGrad0": "#3a3a32", "envGrad1": "#222018", "envGrad2": "#0d0c0a", "envBand0": "rgba(233,225,206,0)", "envBand1": "rgba(233,225,206,0.55)", "floor": 1315599, "wall": 3815209, "band": 13090467, "star": 15262677},lightPreset:{"amb": [15327694, 0.16], "key": [15525074, 3.6], "fill": [12168854, 0.42]},materialPreset:{"tint": [0.8, 0.75, 0.68], "roughness": null, "metalness": null}},
+  {id:"PJE0000319",glbFile:"PJE0000319.glb",cat:"선물 · 행정박물",title:"이집트 거리 풍경을 담은 채색 동판화",hanja:"",presInitial:"金",presName:"김영삼 대통령",presTerm:"제14대 · 1993–1998",demoH:"",demoW:"",meta:[["증정국가", "이집트, Egypt"], ["증정인", "모하메드 시드키 솔리만/Mohamed Sidky Soliman(직위: 이집트 정보국장/생몰년: 1919~)"], ["증정일", "1994-05-03"], ["건번호", "E000000100000982"]],feature:"한완상 대통령 특사는 1994년 5월 3일 한국과 이집트간의 수교를 정식으로 요청하기 위해 호스니 무바라크 이집트 대통령을 예방하여 김영삼 대통령의 친서를 전달하고 양국관계의 증진 방안을 논의했다. 방문중 이집트 모하메드 시드키 솔리만 정보국장으로부터 동판화를 대신 선물받아 김영삼 대통령에게 전달한 것으로 추정된다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000982"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081549034957800010469.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081549034957800010469.jpg"],tours:[],spacePreset:{"bgBase": "#161714", "bgGrad0": "#33332c", "bgGrad1": "#1c1c18", "bgGrad2": "#0a0a08", "fog": 657928, "envGrad0": "#3a3a32", "envGrad1": "#222018", "envGrad2": "#0d0c0a", "envBand0": "rgba(233,225,206,0)", "envBand1": "rgba(233,225,206,0.55)", "floor": 1315599, "wall": 3815209, "band": 13090467, "star": 15262677},lightPreset:{"amb": [15327694, 0.16], "key": [15525074, 3.6], "fill": [12168854, 0.42]},materialPreset:{"tint": [0.8, 0.75, 0.68], "roughness": null, "metalness": null}},
+  {id:"PJE0000230",glbFile:"PJE0000230.glb",cat:"선물 · 행정박물",title:"꽃 모양 은 쟁반",hanja:"",presInitial:"金",presName:"김영삼 대통령",presTerm:"제14대 · 1993–1998",demoH:"",demoW:"",meta:[["증정국가", "우즈베키스탄, Uzbekistan"], ["증정인", "흐마노프, 압둘라/폴랏 마지도비치 압둘라 흐마노프(직위: 우즈베키스탄 사마르칸트 주지사(Governor of Samarqand Province))"], ["증정일", "1994-06-05"], ["건번호", "E000000100000893"]],feature:"김영삼 대통령 내외는 1994년 6월 4일부터 7일까지 정상회담을 위해 우즈베키스탄을 공식 방문했다. 5일 우즈베키스탄 이슬람 카리모프 대통령 내외가 손수 안내하는 가운데 유서 깊은 제2의 도시 사마르칸트를 방문하여 중앙아시아 유적들을 돌아보았다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000893"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081545120770570019129.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081545120770570019129.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081545124951816018172.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081545129196153015954.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081545133428516017140.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PJE0000234",glbFile:"PJE0000234.glb",cat:"선물 · 행정박물",title:"꽃 문양 다기 세트",hanja:"",presInitial:"金",presName:"김영삼 대통령",presTerm:"제14대 · 1993–1998",demoH:"",demoW:"",meta:[["증정국가", "우즈베키스탄, Uzbekistan"], ["증정인", "흐마노프, 압둘라/폴랏 마지도비치 압둘라 흐마노프(직위: 우즈베키스탄 사마르칸트 주지사(Governor of Samarqand Province))"], ["증정일", "1994-06-05"], ["건번호", "E000000100000897"]],feature:"김영삼 대통령 내외는 1994년 6월 4일부터 7일까지 정상회담을 위해 우즈베키스탄을 공식 방문했다. 5일 우즈베키스탄 이슬람 카리모프 대통령 내외가 손수 안내하는 가운데 유서 깊은 제2의 도시 사마르칸트를 방문하여 중앙아시아 유적들을 돌아보았다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000897"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081545251189285014014.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081545251189285014014.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081545255648665012617.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081545259895609015371.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081545264103281016605.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(245,243,238,0)", "envBand1": "rgba(245,243,238,0.5)", "floor": 1315599, "wall": 3815215, "band": 13090467, "star": 16118766},lightPreset:{"amb": [16118766, 0.28], "key": [16775920, 5.2], "fill": [15789280, 0.6]},materialPreset:{"tint": null, "roughness": 0.25, "metalness": 0.05}},
+  {id:"PJE0000260",glbFile:"PJE0000260.glb",cat:"선물 · 행정박물",title:"코발트 글라스[Cobalt glass] 새 모형",hanja:"",presInitial:"金",presName:"김영삼 대통령",presTerm:"제14대 · 1993–1998",demoH:"",demoW:"",meta:[["증정국가", "핀란드, Finland"], ["증정인", "아호, 에스코/Aho, Esko/Aho, Esko Tapani(직위: 핀란드 59대 총리59th Prime Minister of Finland, 재임기간 : 1991~1995)"], ["증정일", "1994-10-28"], ["건번호", "E000000100000923"]],feature:"에스코 아호 핀란드 총리는 1994년 10월 28일 김영삼 대통령을 예방을 하고 오찬을 함께하며 양국간 경제협력및 국제무대에서의 협조방안들에 대해 의견을 교환했다. 핀란드 총리로는 1973년 8월 양국수교이후 최초로 방한했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000923"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081546330206625013543.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081546330206625013543.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081546334105348017390.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081546337778533012263.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081546341451856013685.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(245,243,238,0)", "envBand1": "rgba(245,243,238,0.5)", "floor": 1315599, "wall": 3815215, "band": 13090467, "star": 16118766},lightPreset:{"amb": [16118766, 0.28], "key": [16775920, 5.2], "fill": [15789280, 0.6]},materialPreset:{"tint": null, "roughness": 0.25, "metalness": 0.05}},
+  {id:"PJE0000490",glbFile:"PJE0000490.glb",cat:"선물 · 행정박물",title:"뚜껑있는 그리스 여인 문양 항아리",hanja:"",presInitial:"金",presName:"김영삼 대통령",presTerm:"제14대 · 1993–1998",demoH:"",demoW:"",meta:[["증정국가", "영국, United Kingdom"], ["증정인", "영국 정부/Government of the United Kingdom()"], ["증정일", "1995-03-08"], ["건번호", "E000000100001153"]],feature:"김영삼 대통령 내외는 1995년 3월 8일부터 10일까지 영국을 공식 방문하였다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100001153"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081556118378452015814.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081556118378452015814.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081556122743854017971.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081556126649144013990.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081556130338106011610.jpg"],tours:[],spacePreset:{"bgBase": "#161714", "bgGrad0": "#33332c", "bgGrad1": "#1c1c18", "bgGrad2": "#0a0a08", "fog": 657928, "envGrad0": "#3a3a32", "envGrad1": "#222018", "envGrad2": "#0d0c0a", "envBand0": "rgba(233,225,206,0)", "envBand1": "rgba(233,225,206,0.55)", "floor": 1315599, "wall": 3815209, "band": 13090467, "star": 15262677},lightPreset:{"amb": [15327694, 0.16], "key": [15525074, 3.6], "fill": [12168854, 0.42]},materialPreset:{"tint": [0.8, 0.75, 0.68], "roughness": null, "metalness": null}},
+  {id:"PJE0000254",glbFile:"PJE0000254.glb",cat:"선물 · 행정박물",title:"사펠리(중앙아프리카공화국산 마호가니 나무, sapele) 조각 장식품",hanja:"",presInitial:"金",presName:"김영삼 대통령",presTerm:"제14대 · 1993–1998",demoH:"",demoW:"",meta:[["증정국가", "중앙아프리카공화국, Central African Republic"], ["증정인", "파타세, 앙주 펠릭스/Patasse, Ange Felix(직위: 중앙아프리카공화국 대통령(President of the Central African Republic)/생몰년: 1937.1.25~/재임기간: 1993.10.22~2003.3.15/약력: 중앙아프리카 총리(1976~1978))"], ["증정일", "1995-03-11"], ["건번호", "E000000100000917"]],feature:"김영삼 대통령은 1995년 3월 11일 유엔사회개발정상회의(WSSD)에 참석하기 위해 덴마크의 코펜하겐을 방문하였다. 페루의 알베르토 후지모리 대통령, 가봉의 엘 하드지 오마르 봉고 대통령등 13개 개발도상국 정상들을 사스 스칸디나비아호텔로 초청, 만찬을 베풀고 국제적 관심사에 관해 폭넓게 의견을 교환했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100000917"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081546207641779018990.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081546207641779018990.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PJE0000342",glbFile:"PJE0000342.glb",cat:"선물 · 행정박물",title:"호랑이를 탄 카자흐스탄 사람 조각이 있는 원형 금브로치",hanja:"",presInitial:"金",presName:"김영삼 대통령",presTerm:"제14대 · 1993–1998",demoH:"",demoW:"",meta:[["증정국가", "카자흐스탄, Kazakhstan"], ["증정인", "나자르바예프, 누르술탄/Nazarbayev, Nursultan Abishuly(직위: 카자흐스탄 대통령President of Kazakhstan/생몰년: 1940.7.6 ~/재임기간: 1991.12.16 ~)"], ["증정일", "1995-05-16"], ["건번호", "E000000100001005"]],feature:"누르술탄 나자르바예프 카자흐스탄의 대통령은 1995년 5월 15일부터 18일까지 김영삼대통령 초청으로 방한하였다. 16일 청와대에서 김영삼 대통령과 정상회담을 갖고 두 나라의 무역·투자를 포함한 경제협력과 문화·교육분야에서의 교류를 늘려나가기로 합의했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100001005"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081550097255022010614.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081550097255022010614.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081550100647053019990.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081550103843717016225.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081550107833146011212.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PJE0000416",glbFile:"PJE0000416.glb",cat:"선물 · 행정박물",title:"향나무 항아리",hanja:"",presInitial:"金",presName:"김영삼 대통령",presTerm:"제14대 · 1993–1998",demoH:"",demoW:"",meta:[["증정국가", "미국, United States of America"], ["증정인", "울머, 프랜/Ulmer, Fran(직위: 미국 알래스카 부지사/재임기간 : 1994.12.5~2002.12.2)"], ["증정일", "1995-07-29"], ["건번호", "E000000100001079"]],feature:"김영삼 대통령 내외는 1995년 7월 22일부터 29일까지 정상회담을 위하여 미국을 공식 방문하였다. 29일 워싱턴을 떠나 귀국길에 오른 김영삼 대통령 내외는, 중간기착지인 앵커리지에 잠시 머무는 동안 공항내 귀빈실에서 프랜 울머 부지사와 릭 미스트롬 시장을 접견하였고, 환담을 나누었다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100001079"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081553131612085018846.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081553131612085018846.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081553135792668019324.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081553140491907014844.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081553144818444011380.jpg"],tours:[],spacePreset:{"bgBase": "#161714", "bgGrad0": "#33332c", "bgGrad1": "#1c1c18", "bgGrad2": "#0a0a08", "fog": 657928, "envGrad0": "#3a3a32", "envGrad1": "#222018", "envGrad2": "#0d0c0a", "envBand0": "rgba(233,225,206,0)", "envBand1": "rgba(233,225,206,0.55)", "floor": 1315599, "wall": 3815209, "band": 13090467, "star": 15262677},lightPreset:{"amb": [15327694, 0.16], "key": [15525074, 3.6], "fill": [12168854, 0.42]},materialPreset:{"tint": [0.8, 0.75, 0.68], "roughness": null, "metalness": null}},
+  {id:"PJE0000684",glbFile:"PJE0000684.glb",cat:"선물 · 행정박물",title:"우즈베키스탄 기념 주화",hanja:"",presInitial:"金",presName:"김영삼 대통령",presTerm:"제14대 · 1993–1998",demoH:"",demoW:"",meta:[["증정국가", "우즈베키스탄, Uzbekistan"], ["증정인", "카리모프, 이슬람/Karimov, Islam/Karimov, Islom Abdug‘aniyevich(직위: 우즈베키스탄 대통령(President of Uzbekistan)/생몰년: 1938.1.30~/재임기간: 1990.3.24~현재/약력: 우즈베키스탄 공산당 총서기(1989.6.23~1991.12.29))"], ["증정일", "1997-09-18"], ["건번호", "E000000100001347"]],feature:"이슬람 카리모프 우즈베키스탄 대통령은 김영삼 대통령에게 기념주화를 선물하였다. 선물은 1997년 9월 18일 접수되어 김영삼 대통령에게 전달되었다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100001347"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081604100413904013021.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081604100413904013021.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081604104671841014387.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081604108938673017405.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081604113083924015413.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PKE0000091",glbFile:"PKE0000091.glb",cat:"선물 · 행정박물",title:"피리부는 남자 그림(Fludovick 作), 탄자니아 풍경이 그려진 나무 단지",hanja:"",presInitial:"金",presName:"김대중 대통령",presTerm:"제15대 · 1998–2003",demoH:"",demoW:"",meta:[["증정국가", "탄자니아, Tanzania"], ["증정인", "음카파, 벤저민 윌리엄/Mkapa, Benjamin William(직위: 제3대 탄자니아 대통령(3rd President of Tanzania)/생몰년: 1938-/재임기간: 1995-2005)"], ["증정일", "1998-12-18"], ["건번호", "E000000100001461"]],feature:"벤저민 윌리엄 음카파 탄자니아 대통령은 1998년 12월 18일부터 12월 20일까지 김대중 대통령의 초청으로 방한했다. 18일 청와대에서 김대중 대통령과 정상회담을 가졌다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100001461"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081607530758466019273.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081607530758466019273.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PKE0000109",glbFile:"PKE0000109.glb",cat:"선물 · 행정박물",title:"아라베스크 문양 은제 보석함",hanja:"",presInitial:"金",presName:"김대중 대통령",presTerm:"제15대 · 1998–2003",demoH:"",demoW:"",meta:[["증정국가", "이집트, Egypt"], ["증정인", "수잔 무바라크/Suzanne Mubarak(직위: 이집트 무바라크 대통령 부인(First Lady of Egypt))"], ["증정일", "1999-04-09"], ["건번호", "E000000100001479"]],feature:"김대중 대통령은 1999년 4월 9일 방한한 무하마드 호스니 무바라크 이집트 대통령 내외를 청와대로 초청, 만찬을 함께 하며 두 나라 경제협력 확대와 우리 정부의 대북 포용정책에 대한 의견을 나누었다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100001479"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081608224467552017973.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081608224467552017973.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PKE0000391",glbFile:"PKE0000391.glb",cat:"선물 · 행정박물",title:"꽃 문양 칠보 항아리",hanja:"",presInitial:"金",presName:"김대중 대통령",presTerm:"제15대 · 1998–2003",demoH:"",demoW:"",meta:[["증정국가", "태국, Thailand"], ["증정인", "수파차이 파닛차팍/Suphachai Phanitchaphak/Supachai Panitchpakdi/Supachai Phanitchaphak(직위: 태국 부총리(Deputy Prime Minister of Thailand)/재임기간: 1997~)"], ["증정일", "2000-04-01"], ["건번호", "E000000100001761"]],feature:"수파차이 태국 부총리는 2000년 4월 1일 「아시아태평양경제협력체(APEC)의 새로운 번영과 화합을 위한 포럼」에 참석하기 위해 방한했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100001761"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081618317196822015410.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081618317196822015410.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PLE0000212",glbFile:"PLE0000212.glb",cat:"선물 · 행정박물",title:"백악관과 미국 국조(흰머리독수리)가 장식된 보석함",hanja:"",presInitial:"盧",presName:"노무현 대통령",presTerm:"제16대 · 2003–2008",demoH:"",demoW:"",meta:[["증정국가", "미국, United States of America"], ["증정인", "파월, 콜린/Powell, Colin/Powell, Colin Luther(직위: 미국 65대 국무부 장관(65th United States Secretary of State), 재임기간 : 2001~2005)"], ["증정일", "2004-10-26"], ["건번호", "E000000100002239"]],feature:"콜린 파월 미국 국무장관은 2004년 10월 26일부터 10월 27일까지 공식 방한했다. 26일 노무현 대통령을 예방했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100002239"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081636206145497018930.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081636206145497018930.jpg"],tours:[],spacePreset:{"bgBase": "#161714", "bgGrad0": "#33332c", "bgGrad1": "#1c1c18", "bgGrad2": "#0a0a08", "fog": 657928, "envGrad0": "#3a3a32", "envGrad1": "#222018", "envGrad2": "#0d0c0a", "envBand0": "rgba(233,225,206,0)", "envBand1": "rgba(233,225,206,0.55)", "floor": 1315599, "wall": 3815209, "band": 13090467, "star": 15262677},lightPreset:{"amb": [15327694, 0.16], "key": [15525074, 3.6], "fill": [12168854, 0.42]},materialPreset:{"tint": [0.8, 0.75, 0.68], "roughness": null, "metalness": null}},
+  {id:"PLE0000432",glbFile:"PLE0000432.glb",cat:"선물 · 행정박물",title:"황동 흉상(청동주조기술로 유명한 나이지리아 베냉왕국의 왕비로 추정)",hanja:"",presInitial:"盧",presName:"노무현 대통령",presTerm:"제16대 · 2003–2008",demoH:"",demoW:"",meta:[["증정국가", "나이지리아, Nigeria"], ["증정인", "오바산조, 올루세군/Obasanjo, Olusegun(직위: 나이지리아 12대 대통령(12nd President of Nigeria)/생몰년: 1937.3.5-/재임기간 : 1999.5.29~2007.5. 29/약력: 나이지리아 부통령(1975.7.29~1976.2.13), 나이지리아 5대 대통령(1976.2.13~1979.10.1))"], ["증정일", "2006-03-09"], ["건번호", "E000000100002459"]],feature:"노무현 대통령 내외는 2006년 3월 6일부터 14일까지 아프리카 3개국 이집트, 나이지리아, 알제리를 방문했다. 9일 오후 나이지리아 대통령궁에서 열린 공식 환영식에 참석하고, 오바산조 대통령과 양국간 경제협력 방안에 대해 중점적으로 협의하였다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100002459"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081644463413489012646.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081644463413489012646.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081644456121158016833.jpg"],tours:[{"tourid": "1000130", "prstnm": "", "label": "나이지리아, Nigeria 해외순방 기록", "url": "https://pa.go.kr/portal/contents/stroll/diplomacy/diplomacyDetail.do?tourid=1000130&prstnm="}],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PLE0000439",glbFile:"PLE0000439.glb",cat:"선물 · 행정박물",title:"알제리 전통 문양 항아리",hanja:"",presInitial:"盧",presName:"노무현 대통령",presTerm:"제16대 · 2003–2008",demoH:"",demoW:"",meta:[["증정국가", "알제리, Algeria"], ["증정인", "압델라지즈 부테플리카/Abdelaziz Bouteflika(직위: 알제리 10대 대통령(10th President of Algeria)/생몰년 : 1937.3.2/재임기간 : 1999.4.27~/약력: 국제연합총회 의장(1974~1975))"], ["증정일", "2006-03-12"], ["건번호", "E000000100002466"]],feature:"노무현 대통령 내외는 2006년 3월 6일부터 14일까지 아프리카 3개국 이집트, 나이지리아, 알제리를 방문했다. 12일 압델라지즈 부테플리카 대통령과 정상회담을 갖고 테러, 초국가적 조직범죄, 향정신성 물질과 불법무기 거래에 공동 대응키로 하는 등 양국 관계를 '전략적 동반자 관계'로 발전시켜 나가기로 합의했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000000100002466"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081644568768344019180.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081644568768344019180.jpg"],tours:[{"tourid": "1000131", "prstnm": "", "label": "알제리, Algeria 해외순방 기록", "url": "https://pa.go.kr/portal/contents/stroll/diplomacy/diplomacyDetail.do?tourid=1000131&prstnm="}],spacePreset:{"bgBase": "#161714", "bgGrad0": "#33332c", "bgGrad1": "#1c1c18", "bgGrad2": "#0a0a08", "fog": 657928, "envGrad0": "#3a3a32", "envGrad1": "#222018", "envGrad2": "#0d0c0a", "envBand0": "rgba(233,225,206,0)", "envBand1": "rgba(233,225,206,0.55)", "floor": 1315599, "wall": 3815209, "band": 13090467, "star": 15262677},lightPreset:{"amb": [15327694, 0.16], "key": [15525074, 3.6], "fill": [12168854, 0.42]},materialPreset:{"tint": [0.8, 0.75, 0.68], "roughness": null, "metalness": null}},
+  {id:"PNE0000111",glbFile:"PNE0000111.glb",cat:"선물 · 행정박물",title:"카자흐스탄 바이테렉 타워[Baiterek Tower] 모양을 딴 트로피",hanja:"",presInitial:"李",presName:"이명박 대통령",presTerm:"제17대 · 2008–2013",demoH:"",demoW:"",meta:[["증정국가", "카자흐스탄, Kazakhstan"], ["증정인", "나자르바예프, 누르술탄/Nazarbayev, Nursultan Abishuly(직위: 카자흐스탄 대통령(President of Kazakhstan)/생몰년: 1940.7.6 ~/재임기간: 1991.12.16 ~)"], ["증정일", "2009-05-13"], ["건번호", "E000009400000111"]],feature:"이명박 대통령은 2009년 5월 10일부터 14일까지 우크베키스탄과 카자흐스탄 등 중앙아시아 2개국을 국빈 방문하였다. 13일 오후 아스타나에서 정상회담을 갖고 ‘양국 간 실질협력 증진을 위한 행동계획(액션플랜)’을 채택했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000009400000111"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081657200261062017830.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081657200261062017830.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081657214332592012222.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081657228786107016102.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081657245807703017502.jpg"],tours:[{"tourid": "1000166", "prstnm": "", "label": "카자흐스탄, Kazakhstan 해외순방 기록", "url": "https://pa.go.kr/portal/contents/stroll/diplomacy/diplomacyDetail.do?tourid=1000166&prstnm="}],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PNE0000118",glbFile:"PNE0000118.glb",cat:"선물 · 행정박물",title:"받침 있는 주석 잔 세트",hanja:"",presInitial:"李",presName:"이명박 대통령",presTerm:"제17대 · 2008–2013",demoH:"",demoW:"",meta:[["증정국가", "카자흐스탄, Kazakhstan"], ["증정인", "나자르바예프, 누르술탄/Nazarbayev, Nursultan Abishuly(직위: 카자흐스탄 대통령(President of Kazakhstan)/생몰년: 1940.7.6 ~/재임기간: 1991.12.16 ~)"], ["증정일", "2009-05-13"], ["건번호", "E000009400000118"]],feature:"이명박 대통령은 2009년 5월 10일부터 14일까지 우크베키스탄과 카자흐스탄 등 중앙아시아 2개국을 국빈 방문하였다. 13일 오후 아스타나에서 정상회담을 갖고 ‘양국 간 실질협력 증진을 위한 행동계획(액션플랜)’을 채택했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000009400000118"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081657531427049010066.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081657531427049010066.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081657544516642010146.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081657557580940019510.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081657570685407015141.jpg"],tours:[{"tourid": "1000166", "prstnm": "", "label": "카자흐스탄, Kazakhstan 해외순방 기록", "url": "https://pa.go.kr/portal/contents/stroll/diplomacy/diplomacyDetail.do?tourid=1000166&prstnm="}],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PNE0000119",glbFile:"PNE0000119.glb",cat:"선물 · 행정박물",title:"용사 그림 대리석 접시",hanja:"",presInitial:"李",presName:"이명박 대통령",presTerm:"제17대 · 2008–2013",demoH:"",demoW:"",meta:[["증정국가", "카자흐스탄, Kazakhstan"], ["증정인", "나자르바예프, 누르술탄/Nazarbayev, Nursultan Abishuly(직위: 카자흐스탄 대통령(President of Kazakhstan)/생몰년: 1940.7.6 ~/재임기간: 1991.12.16 ~)"], ["증정일", "2009-05-13"], ["건번호", "E000009400000119"]],feature:"이명박 대통령은 2009년 5월 10일부터 14일까지 우크베키스탄과 카자흐스탄 등 중앙아시아 2개국을 국빈 방문하였다. 13일 오후 아스타나에서 정상회담을 갖고 ‘양국 간 실질협력 증진을 위한 행동계획(액션플랜)’을 채택했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000009400000119"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081657593565388013301.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081657593565388013301.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081658002195290018176.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081658010053522019521.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081658017312888011145.jpg"],tours:[{"tourid": "1000166", "prstnm": "", "label": "카자흐스탄, Kazakhstan 해외순방 기록", "url": "https://pa.go.kr/portal/contents/stroll/diplomacy/diplomacyDetail.do?tourid=1000166&prstnm="}],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"PNE0000120",glbFile:"PNE0000120.glb",cat:"선물 · 행정박물",title:"낙타 대리석 장식품",hanja:"",presInitial:"李",presName:"이명박 대통령",presTerm:"제17대 · 2008–2013",demoH:"",demoW:"",meta:[["증정국가", "카자흐스탄, Kazakhstan"], ["증정인", "나자르바예프, 누르술탄/Nazarbayev, Nursultan Abishuly(직위: 카자흐스탄 대통령(President of Kazakhstan)/생몰년: 1940.7.6 ~/재임기간: 1991.12.16 ~)"], ["증정일", "2009-05-13"], ["건번호", "E000009400000120"]],feature:"이명박 대통령은 2009년 5월 10일부터 14일까지 우크베키스탄과 카자흐스탄 등 중앙아시아 2개국을 국빈 방문하였다. 13일 오후 아스타나에서 정상회담을 갖고 ‘양국 간 실질협력 증진을 위한 행동계획(액션플랜)’을 채택했다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000009400000120"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081658033328088010513.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081658033328088010513.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081658037622162017187.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081658042042542013815.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2017/11/08/SOUND/SRC/0103201711081658047039510017099.jpg"],tours:[{"tourid": "1000166", "prstnm": "", "label": "카자흐스탄, Kazakhstan 해외순방 기록", "url": "https://pa.go.kr/portal/contents/stroll/diplomacy/diplomacyDetail.do?tourid=1000166&prstnm="}],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(245,243,238,0)", "envBand1": "rgba(245,243,238,0.5)", "floor": 1315599, "wall": 3815215, "band": 13090467, "star": 16118766},lightPreset:{"amb": [16118766, 0.28], "key": [16775920, 5.2], "fill": [15789280, 0.6]},materialPreset:{"tint": null, "roughness": 0.25, "metalness": 0.05}},
+  {id:"PNE0000463",glbFile:"PNE0000463.glb",cat:"선물 · 행정박물",title:"목각 부채머리 수리상",hanja:"",presInitial:"李",presName:"이명박 대통령",presTerm:"제17대 · 2008–2013",demoH:"",demoW:"",meta:[["증정국가", "파나마, Panama"], ["증정인", "마르티넬리, 리카르도/Martinelli, Ricardo/Ricardo Alberto Martinelli Berrocal(직위: 파나마 대통령/재임기간: 20090701~/생몰년: 19520311~)"], ["증정일", "2010-10-20"], ["건번호", "E000009400000463"]],feature:"2010년 10월 20일, 이명박 대통령은 청와대에서 우리나라를 국빈방문중인 리까르도 마르띠넬리 파나마 대통령과 정상회담을 갖고, 통상투자, 자원인프라 분야 협력, 국제무대에서의 협력 등 제반분야에서의 양국 협력 방안에 대해 심도있게 논의하였다.",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000009400000463"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/NATURAL/2016/12/01/IMG/SRC/0301201612011601499055920015942.jpg",imgs:["https://dams.pa.go.kr/dams/NATURAL/2016/12/01/IMG/SRC/0301201612011601499055920015942.jpg", "https://dams.pa.go.kr/dams/NATURAL/2016/12/01/IMG/SRC/0301201612011601512797371011089.jpg", "https://dams.pa.go.kr/dams/NATURAL/2016/12/01/IMG/SRC/0301201612011601527032832010643.jpg", "https://dams.pa.go.kr/dams/NATURAL/2016/12/01/IMG/SRC/0301201612011601540682832014797.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(255,180,110,0)", "envBand1": "rgba(255,180,110,0.7)", "floor": 1314570, "wall": 4863010, "band": 16756832, "star": 16773328},lightPreset:{"amb": [16773344, 0.2], "key": [16773852, 5.0], "fill": [16769216, 0.5]},materialPreset:{"tint": null, "roughness": null, "metalness": null}},
+  {id:"POE0000162",glbFile:"POE0000162.glb",cat:"선물 · 행정박물",title:"타조알작품",hanja:"",presInitial:"朴",presName:"박근혜 대통령",presTerm:"제18대 · 2013–2017",demoH:"",demoW:"",meta:[["증정국가", "수단, Sudan"], ["증정인", "모하메드 압둘알 하룬(주한대사)"], ["증정일", "2014-10-27"], ["건번호", "E000068700000162"]],feature:"신임장 제정식",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000068700000162"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2018/12/05/SOUND/SRC/0103201812051455573874861014880.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2018/12/05/SOUND/SRC/0103201812051455573874861014880.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2018/12/05/SOUND/SRC/0103201812051455587656026011093.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2018/12/05/SOUND/SRC/0103201812051455599981804014638.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2018/12/05/SOUND/SRC/0103201812051456012790958011520.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(245,243,238,0)", "envBand1": "rgba(245,243,238,0.5)", "floor": 1315599, "wall": 3815215, "band": 13090467, "star": 16118766},lightPreset:{"amb": [16118766, 0.28], "key": [16775920, 5.2], "fill": [15789280, 0.6]},materialPreset:{"tint": null, "roughness": 0.25, "metalness": 0.05}},
+  {id:"POE0000163",glbFile:"POE0000163.glb",cat:"선물 · 행정박물",title:"흑단 낙타상",hanja:"",presInitial:"朴",presName:"박근혜 대통령",presTerm:"제18대 · 2013–2017",demoH:"",demoW:"",meta:[["증정국가", "수단, Sudan"], ["증정인", "모하메드 압둘 알 하룬(주한대사)"], ["증정일", "2014-10-27"], ["건번호", "E000068700000163"]],feature:"신임장 제정식",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000068700000163"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://dams.pa.go.kr/dams/DOCUMENT/2018/12/05/SOUND/SRC/0103201812051456026496483017163.jpg",imgs:["https://dams.pa.go.kr/dams/DOCUMENT/2018/12/05/SOUND/SRC/0103201812051456026496483017163.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2018/12/05/SOUND/SRC/0103201812051456037873407013764.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2018/12/05/SOUND/SRC/0103201812051456050349864013801.jpg", "https://dams.pa.go.kr/dams/DOCUMENT/2018/12/05/SOUND/SRC/0103201812051456063554823017525.jpg"],tours:[],spacePreset:{"bgBase": "#161714", "bgGrad0": "#33332c", "bgGrad1": "#1c1c18", "bgGrad2": "#0a0a08", "fog": 657928, "envGrad0": "#3a3a32", "envGrad1": "#222018", "envGrad2": "#0d0c0a", "envBand0": "rgba(233,225,206,0)", "envBand1": "rgba(233,225,206,0.55)", "floor": 1315599, "wall": 3815209, "band": 13090467, "star": 15262677},lightPreset:{"amb": [15327694, 0.16], "key": [15525074, 3.6], "fill": [12168854, 0.42]},materialPreset:{"tint": [0.8, 0.75, 0.68], "roughness": null, "metalness": null}},
+  {id:"POE0000349",glbFile:"POE0000349.glb",cat:"선물 · 행정박물",title:"소삼채복수천구병(素三彩福寿天球甁)",hanja:"",presInitial:"文",presName:"문재인 대통령",presTerm:"제19대 · 2017–2022",demoH:"",demoW:"",meta:[["증정국가", "중국"], ["증정인", "시진핑(Xi Jinping)()"], ["증정일", "2017-11-11"], ["건번호", "E000081300000349"]],feature:"APEC 정상회의 참석(2017.11.10 - 11.11) 중 다낭 한.중 정상회담 계기 간접 전달",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000081300000349"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://www.pa.go.kr/files/giftgallery/thum_img/E000081300000349.jpg",imgs:["https://www.pa.go.kr/files/giftgallery/thum_img/E000081300000349.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(245,243,238,0)", "envBand1": "rgba(245,243,238,0.5)", "floor": 1315599, "wall": 3815215, "band": 13090467, "star": 16118766},lightPreset:{"amb": [16118766, 0.28], "key": [16775920, 5.2], "fill": [15789280, 0.6]},materialPreset:{"tint": null, "roughness": 0.25, "metalness": 0.05}},
+  {id:"PQE0000479",glbFile:"PQE0000479.glb",cat:"선물 · 행정박물",title:"상감 세공 나무함",hanja:"",presInitial:"文",presName:"문재인 대통령",presTerm:"제19대 · 2017–2022",demoH:"",demoW:"",meta:[["증정국가", "인도"], ["증정인", "나렌드라 모디(Narendra Damodardas Modi)(총리)"], ["증정일", "2019-02-21"], ["건번호", "E000081300000479"]],feature:"",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000081300000479"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://www.pa.go.kr/files/giftgallery/thum_img/E000081300000479.jpg",imgs:["https://www.pa.go.kr/files/giftgallery/thum_img/E000081300000479.jpg"],tours:[],spacePreset:{"bgBase": "#161714", "bgGrad0": "#33332c", "bgGrad1": "#1c1c18", "bgGrad2": "#0a0a08", "fog": 657928, "envGrad0": "#3a3a32", "envGrad1": "#222018", "envGrad2": "#0d0c0a", "envBand0": "rgba(233,225,206,0)", "envBand1": "rgba(233,225,206,0.55)", "floor": 1315599, "wall": 3815209, "band": 13090467, "star": 15262677},lightPreset:{"amb": [15327694, 0.16], "key": [15525074, 3.6], "fill": [12168854, 0.42]},materialPreset:{"tint": [0.8, 0.75, 0.68], "roughness": null, "metalness": null}},
+  {id:"PQE0000811",glbFile:"PQE0000811.glb",cat:"선물 · 행정박물",title:"투탕카멘의 황금 가면 모형 장식품",hanja:"",presInitial:"文",presName:"문재인 대통령",presTerm:"제19대 · 2017–2022",demoH:"",demoW:"",meta:[["증정국가", "이집트"], ["증정인", "칼리드 압델라흐만(Khaled Abdelrahman)(주한이집트대사)"], ["증정일", "2022-04-12"], ["건번호", "E000081300000811"]],feature:"",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000081300000811"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://www.pa.go.kr/files/giftgallery/thum_img/E000081300000811.jpg",imgs:["https://www.pa.go.kr/files/giftgallery/thum_img/E000081300000811.jpg"],tours:[],spacePreset:{"bgBase": "#15100b", "bgGrad0": "#2a2016", "bgGrad1": "#17110b", "bgGrad2": "#080604", "fog": 525828, "envGrad0": "#3a2e20", "envGrad1": "#1e1810", "envGrad2": "#0a0806", "envBand0": "rgba(245,243,238,0)", "envBand1": "rgba(245,243,238,0.5)", "floor": 1315599, "wall": 3815215, "band": 13090467, "star": 16118766},lightPreset:{"amb": [16118766, 0.28], "key": [16775920, 5.2], "fill": [15789280, 0.6]},materialPreset:{"tint": null, "roughness": 0.25, "metalness": 0.05}},
+  {id:"PQE0000808",glbFile:"PQE0000808.glb",cat:"선물 · 행정박물",title:"생각하는 현자 목공예품",hanja:"",presInitial:"文",presName:"문재인 대통령",presTerm:"제19대 · 2017–2022",demoH:"",demoW:"",meta:[["증정국가", "코트디부아르"], ["증정인", "완유 외젠 비티(Allou Wanyou Eugène BITI)(주한코트디부아르대사)"], ["증정일", "2022-04-12"], ["건번호", "E000081300000808"]],feature:"",links:[["원본 상세 페이지", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryDetail.do?cNum=E000081300000808"], ["선물·행정박물 목록", "https://pa.go.kr/portal/contents/stroll/giftgallery/giftgalleryList.do"]],thumb:"https://www.pa.go.kr/files/giftgallery/thum_img/E000081300000808.jpg",imgs:["https://www.pa.go.kr/files/giftgallery/thum_img/E000081300000808.jpg"],tours:[],spacePreset:{"bgBase": "#161714", "bgGrad0": "#33332c", "bgGrad1": "#1c1c18", "bgGrad2": "#0a0a08", "fog": 657928, "envGrad0": "#3a3a32", "envGrad1": "#222018", "envGrad2": "#0d0c0a", "envBand0": "rgba(233,225,206,0)", "envBand1": "rgba(233,225,206,0.55)", "floor": 1315599, "wall": 3815209, "band": 13090467, "star": 15262677},lightPreset:{"amb": [15327694, 0.16], "key": [15525074, 3.6], "fill": [12168854, 0.42]},materialPreset:{"tint": [0.8, 0.75, 0.68], "roughness": null, "metalness": null}}
+];
+
+const ART_SIZE = 1.5;
+let scene,camera,renderer,controls,currentModel=null;
+let isRot=true, curArt=0, pmrem=null, envMap=null;
+let dimOn=false, cutOn=false, lightMul=0.2;
+let dimGroup=null, modelBox=null;
+let baseLightIntensity={};
+let clipPlane=null;
+let measuredH=null;   // 사용자가 입력한 실측 높이(cm), 없으면 null
+let wireOn=false;
+
+function init(){
+  const cv=document.getElementById('cv');
+  const w=cv.parentElement.clientWidth, h=cv.parentElement.clientHeight;
+  scene=new THREE.Scene();
+  // 배경/환경광/공간은 applySpacePreset(ARTS[curArt])에서 유물별로 설정됨
+
+  camera=new THREE.PerspectiveCamera(38,w/h,0.01,100);
+  camera.position.set(0,0.3,3.6);
+
+  renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setSize(w,h);
+  renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.outputEncoding=THREE.sRGBEncoding;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.0;
+  renderer.localClippingEnabled=true;
+
+  controls=new THREE.OrbitControls(camera,renderer.domElement);
+  controls.enableDamping=true; controls.dampingFactor=0.06;
+  controls.minDistance=1.4; controls.maxDistance=8;
+  controls.maxPolarAngle=Math.PI;
+  controls.target.set(0,0,0);
+
+  clipPlane=new THREE.Plane(new THREE.Vector3(1,0,0), 0);
+
+  buildEnvMap();
+  applySpacePreset(ARTS[0]);
+  buildLights();
+
+  window.addEventListener('resize',onResize);
+  animate();
+}
+
+function buildEnvMap(){
+  pmrem=new THREE.PMREMGenerator(renderer);
+  // 실제 환경맵 텍스처는 applySpacePreset(a)에서 유물별로 생성됨
+}
+
+// ===== 전시 공간 (유물별 색조 전환 가능) =====
+let spaceObjs=[]; // floor, wall, band, bandLight1-3, stars — switchArt 시 제거 후 재생성
+
+function buildSpace(){
+  const sp=ARTS[curArt].spacePreset || ARTS[0].spacePreset;
+  spaceObjs.forEach(o=>scene.remove(o));
+  spaceObjs=[];
+
+  // 바닥 — 반사 바닥
+  const floor=new THREE.Mesh(new THREE.CircleGeometry(20,64),new THREE.MeshStandardMaterial({color:sp.floor, roughness:0.35, metalness:0.45, envMapIntensity:0.5}));
+  floor.rotation.x=-Math.PI/2; floor.position.y=-2.2; floor.receiveShadow=true; scene.add(floor); spaceObjs.push(floor);
+
+  // 곡면 벽 (유물 뒤를 감싸는 큰 원통)
+  const wallMat=new THREE.MeshStandardMaterial({color:sp.wall, roughness:0.95, metalness:0, side:THREE.BackSide, envMapIntensity:0.3});
+  const wall=new THREE.Mesh(new THREE.CylinderGeometry(8,8,14,80,1,true),wallMat);
+  wall.position.y=2; scene.add(wall); spaceObjs.push(wall);
+
+  // 벽 하단 띠조명 (emissive 링)
+  const bandGeo=new THREE.CylinderGeometry(7.9,7.9,0.5,80,1,true);
+  const bandMat=new THREE.MeshBasicMaterial({color:sp.band, side:THREE.BackSide, transparent:true, opacity:0.55});
+  const band=new THREE.Mesh(bandGeo,bandMat); band.position.y=-0.3; scene.add(band); spaceObjs.push(band);
+  // 띠조명에서 나오는 실제 빛 (벽을 비추도록)
+  const bandLight1=new THREE.PointLight(sp.band, 8, 14, 2); bandLight1.position.set(0,-0.3,-5); scene.add(bandLight1); spaceObjs.push(bandLight1);
+  const bandLight2=new THREE.PointLight(sp.band, 6, 12, 2); bandLight2.position.set(-4,-0.3,2); scene.add(bandLight2); spaceObjs.push(bandLight2);
+  const bandLight3=new THREE.PointLight(sp.band, 6, 12, 2); bandLight3.position.set(4,-0.3,2); scene.add(bandLight3); spaceObjs.push(bandLight3);
+
+  // 천장 별빛 (점광 파티클)
+  const starGeo=new THREE.BufferGeometry();
+  const starCount=600, pos=[];
+  for(let i=0;i<starCount;i++){
+    const r=3+Math.random()*5, th=Math.random()*Math.PI*2, ph=Math.random()*0.5;
+    pos.push(Math.sin(ph)*Math.cos(th)*r, 5+Math.cos(ph)*1.5, Math.sin(ph)*Math.sin(th)*r);
+  }
+  starGeo.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
+  const stars=new THREE.Points(starGeo, new THREE.PointsMaterial({color:sp.star, size:0.025, transparent:true, opacity:0.8, sizeAttenuation:true}));
+  scene.add(stars); spaceObjs.push(stars);
+}
+
+// 배경 캔버스 그라데이션 + fog + 환경맵을 유물별로 갱신
+function applySpacePreset(a){
+  const sp=a.spacePreset;
+  if(!sp) return;
+  // 색상 문자열에 바깥 따옴표 있으면 제거 ('"#15100b"' → '#15100b')
+  const _col=v=>typeof v==='string'?v.replace(/^['"]+|['"]+$/g,''):v;
+  const bc=document.createElement('canvas'); bc.width=512; bc.height=512; const bx=bc.getContext('2d');
+  bx.fillStyle=_col(sp.bgBase); bx.fillRect(0,0,512,512);
+  const rg=bx.createRadialGradient(256,230,40,256,320,440);
+  rg.addColorStop(0,_col(sp.bgGrad0)); rg.addColorStop(0.5,_col(sp.bgGrad1)); rg.addColorStop(1,_col(sp.bgGrad2));
+  bx.fillStyle=rg; bx.fillRect(0,0,512,512);
+  scene.background=new THREE.CanvasTexture(bc);
+  scene.fog=new THREE.FogExp2(sp.fog, 0.06);
+
+  if(pmrem){
+    const c=document.createElement('canvas'); c.width=512; c.height=256; const ctx=c.getContext('2d');
+    const g=ctx.createLinearGradient(0,0,0,256);
+    g.addColorStop(0,_col(sp.envGrad0)); g.addColorStop(0.4,_col(sp.envGrad1)); g.addColorStop(1,_col(sp.envGrad2));
+    ctx.fillStyle=g; ctx.fillRect(0,0,512,256);
+    const band=ctx.createLinearGradient(0,150,0,200);
+    band.addColorStop(0,_col(sp.envBand0)); band.addColorStop(0.5,_col(sp.envBand1)); band.addColorStop(1,_col(sp.envBand0));
+    ctx.fillStyle=band; ctx.fillRect(0,150,512,50);
+    const tex=new THREE.CanvasTexture(c); tex.mapping=THREE.EquirectangularReflectionMapping;
+    if(envMap) envMap.dispose();
+    envMap=pmrem.fromEquirectangular(tex).texture;
+    scene.environment=envMap;
+    tex.dispose();
+  }
+  buildSpace();
+}
+
+function buildLights(){
+  const p=ARTS[0].lightPreset;
+  const amb=new THREE.AmbientLight(p.amb[0], p.amb[1]); scene.add(amb); baseLightIntensity.amb=p.amb[1];
+  // 유물 위로 떨어지는 정밀 스포트 (사유의 방처럼 오브제만 빛남)
+  const key=new THREE.SpotLight(p.key[0], p.key[1], 12, Math.PI/9, 0.5, 1.3);
+  key.position.set(-1,5,1.5); key.target.position.set(0,0,0);
+  key.castShadow=true; key.shadow.mapSize.set(2048,2048); key.shadow.bias=-0.0004; key.shadow.radius=5;
+  scene.add(key); scene.add(key.target); baseLightIntensity.key=p.key[1];
+  // 정면 부드러운 채움
+  const fill=new THREE.DirectionalLight(p.fill[0], p.fill[1]); fill.position.set(2.5,1.5,3); scene.add(fill); baseLightIntensity.fill=p.fill[1];
+  window._lights={amb,key,fill};
+}
+
+// 유물 전환 시 조명을 해당 유물의 lightPreset으로 갱신
+function applyLightPreset(a){
+  const p=a.lightPreset, L=window._lights;
+  if(!p||!L) return;
+  L.amb.color.setHex(p.amb[0]); L.amb.intensity=p.amb[1]; baseLightIntensity.amb=p.amb[1];
+  L.key.color.setHex(p.key[0]); L.key.intensity=p.key[1]; baseLightIntensity.key=p.key[1];
+  L.fill.color.setHex(p.fill[0]); L.fill.intensity=p.fill[1]; baseLightIntensity.fill=p.fill[1];
+  // 현재 밝기 슬라이더 비율 유지
+  const slider=document.getElementById('light-slider');
+  if(slider) updateLight(slider.value);
+}
+
+function downloadModel(){
+  const a=ARTS[curArt];
+  const link=document.createElement('a');
+  link.href='./glb/'+a.glbFile;
+  link.download=a.glbFile;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function loadArt(idx){
+  const a=ARTS[idx];
+  document.getElementById('rid').textContent=a.id;
+  document.getElementById('cap-title').textContent=a.title;
+  renderMeta(a);
+  applyLightPreset(a);
+  applySpacePreset(a);
+  if(currentModel){scene.remove(currentModel); currentModel=null;}
+  if(dimGroup){scene.remove(dimGroup); dimGroup=null;}
+  document.getElementById('loading').style.display='flex';
+
+  // file:// 로컬 환경에서는 fetch가 차단됨 → 안내
+  if(location.protocol==='file:'){
+    document.getElementById('loading').innerHTML=
+      '<div style="text-align:center;padding:20px;font-size:12px;color:rgba(255,255,255,0.5);line-height:2">'
+      +'<div style="font-size:24px;margin-bottom:12px;">⚠️</div>'
+      +'3D 모델을 로드하려면 로컬 서버가 필요합니다.<br>'
+      +'<span style="color:#c9a84c;font-family:monospace;font-size:11px;">터미널에서: cd Desktop/pa3d && python3 -m http.server 8000</span><br>'
+      +'이후 브라우저에서 <span style="color:#c9a84c">localhost:8000</span> 으로 접속하세요.</div>';
+    return;
+  }
+
+  const mp=a.materialPreset||{};
+  const loader=new THREE.GLTFLoader();
+  loader.load('./glb/'+a.glbFile,(gltf)=>{
+    const m=gltf.scene;
+    let box=new THREE.Box3().setFromObject(m);
+    const size=box.getSize(new THREE.Vector3());
+    const maxD=Math.max(size.x,size.y,size.z);
+    m.scale.setScalar(ART_SIZE/maxD);
+    box.setFromObject(m);
+    const ctr=box.getCenter(new THREE.Vector3());
+    m.position.sub(ctr);
+    m.traverse(n=>{ if(n.isMesh){ n.castShadow=true; n.receiveShadow=true; if(n.material){
+      n.material.envMap=envMap;
+      n.material.envMapIntensity=(mp.roughness!=null)?1.1:0.8;
+      if(mp.roughness!=null && 'roughness' in n.material) n.material.roughness=mp.roughness;
+      if(mp.metalness!=null && 'metalness' in n.material) n.material.metalness=mp.metalness;
+      if(mp.tint && n.material.color) n.material.color.setRGB(mp.tint[0],mp.tint[1],mp.tint[2]);
+      n.material.clippingPlanes=cutOn?[clipPlane]:[]; n.material.clipShadows=true; n.material.side=THREE.DoubleSide; n.material.wireframe=wireOn; n.material.needsUpdate=true;
+    } } });
+    scene.add(m); currentModel=m;
+    modelBox=new THREE.Box3().setFromObject(m);
+
+    controls.target.set(0,0,0); camera.position.set(0,0.3,3.6); controls.update();
+    document.getElementById('loading').style.display='none';
+    if(dimOn) buildDimensions();
+    let t=0; (function intro(){ t+=0.006; if(t<1){ m.rotation.y=t*Math.PI*2; requestAnimationFrame(intro);} else m.rotation.y=0; })();
+  },undefined,(e)=>{
+    console.error('GLB 로드 실패:', a.glbFile, e);
+    document.getElementById('loading').innerHTML='<div style="text-align:center;padding:20px;font-size:11px;color:rgba(255,255,255,0.4);line-height:2"><div style="font-size:20px;margin-bottom:8px">⚠</div>3D 모델 로드 실패<br><span style="font-size:10px;color:rgba(255,255,255,0.25)">'+a.glbFile+'</span></div>';
+  });
+}
+
+// ===== 치수 계측선 =====
+function buildDimensions(){
+  if(dimGroup){scene.remove(dimGroup); dimGroup=null;}
+  if(!currentModel) return;
+  const box=new THREE.Box3().setFromObject(currentModel);
+  const g=new THREE.Group();
+  const lineMat=new THREE.LineBasicMaterial({color:0xd4a574, transparent:true, opacity:0.8});
+  const x0=box.min.x, x1=box.max.x, y0=box.min.y, y1=box.max.y, z=box.max.z+0.15;
+  const off=0.25;
+  // 높이선 (왼쪽 세로)
+  function line(pts){ const geo=new THREE.BufferGeometry().setFromPoints(pts.map(p=>new THREE.Vector3(...p))); return new THREE.Line(geo,lineMat); }
+  g.add(line([[x0-off,y0,z],[x0-off,y1,z]]));
+  g.add(line([[x0-off-0.05,y0,z],[x0-off+0.05,y0,z]]));
+  g.add(line([[x0-off-0.05,y1,z],[x0-off+0.05,y1,z]]));
+  // 폭선 (아래 가로)
+  g.add(line([[x0,y0-off,z],[x1,y0-off,z]]));
+  g.add(line([[x0,y0-off-0.05,z],[x0,y0-off+0.05,z]]));
+  g.add(line([[x1,y0-off-0.05,z],[x1,y0-off+0.05,z]]));
+  scene.add(g); dimGroup=g;
+  dimGroup.userData={x0,x1,y0,y1,z,off};
+}
+
+function updateDimLabels(){
+  if(!dimOn || !dimGroup || !currentModel){ document.getElementById('dim-h').style.display='none'; document.getElementById('dim-w').style.display='none'; return; }
+  const a=ARTS[curArt];
+  const d=dimGroup.userData;
+  let hText=a.demoH, wText=a.demoW;
+  if(measuredH!==null){
+    const box=new THREE.Box3().setFromObject(currentModel);
+    const h=box.max.y-box.min.y, w=box.max.x-box.min.x;
+    hText=measuredH.toFixed(1)+' cm';
+    wText=(measuredH*(w/h)).toFixed(1)+' cm';
+  }
+  const hWorld=new THREE.Vector3(d.x0-d.off, (d.y0+d.y1)/2, d.z);
+  const wWorld=new THREE.Vector3((d.x0+d.x1)/2, d.y0-d.off, d.z);
+  project('dim-h', hWorld, hText);
+  project('dim-w', wWorld, wText);
+}
+function project(id, world, text){
+  const v=world.clone().project(camera);
+  const el=document.getElementById(id);
+  const cv=document.getElementById('cv');
+  if(v.z>1){ el.style.display='none'; return; }
+  const x=(v.x*0.5+0.5)*cv.clientWidth;
+  const y=(-v.y*0.5+0.5)*cv.clientHeight;
+  el.style.left=x+'px'; el.style.top=y+'px'; el.textContent=text; el.style.display='block';
+}
+
+function renderMeta(a){
+  const rows=a.meta.map(([k,v])=>`<div class="m-row"><span class="m-label">${k}</span><span class="m-value">${v}</span></div>`).join('');
+  const links=a.links.map(([t,u])=>`<a class="m-link" onclick="openLink('${u}')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
+    <span>${t}</span><span class="arr">›</span></a>`).join('');
+  document.getElementById('meta').innerHTML=`
+    <span class="m-cat">${a.cat}</span>
+    <div class="m-title">${a.title}</div>
+    <div class="m-hanja">${a.hanja}</div>
+    <div class="m-divider"></div>
+    ${rows}
+    <div class="m-pres">
+      <div class="m-pres-circle">${a.presInitial}</div>
+      <div><div class="m-pres-name">${a.presName}</div><div class="m-pres-term">${a.presTerm}</div></div>
+    </div>
+    <div class="m-divider"></div>
+    <div class="m-feat-label">특징 · 수령 경위</div>
+    <div class="m-feature">${a.feature}</div>
+    <div class="m-links">${links}</div>
+    ${a.tours && a.tours.length ? `
+    <div class="m-gallery" style="margin-top:10px;">
+      <div class="m-gallery-label" style="color:rgba(201,168,76,0.7);">✈ 관련 해외순방 기록</div>
+      ${a.tours.map(t=>`<a class="m-link" onclick="openLink('${t.url}')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        <span>${t.label}</span><span class="arr">›</span></a>`).join('')}
+    </div>` : ''}
+    ${a.imgs && a.imgs.length ? `
+    <div class="m-gallery">
+      <div class="m-gallery-label">실물 사진</div>
+      <div class="m-gallery-grid">
+        ${a.imgs.map((url,i)=>`<img src="${url}" loading="lazy" alt="${a.title} ${i+1}" onclick="event.stopPropagation();openLightbox('${url}','${a.title}')">`).join('')}
+      </div>
+    </div>` : ''}
+    <div class="m-dl" onclick="downloadModel()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <div class="m-dl-text"><span class="m-dl-title">3D 모델 다운로드 (.glb)</span><span class="m-dl-sub">3D 프린트·편집 프로그램에서 활용 가능</span></div>
+    </div>
+    <div class="m-dl-note">공공누리 제4유형(출처표시·변경금지)에 따라 출처를 표시하고, 변경 없이 활용해 주세요. GLB는 3D 프린트 슬라이서에서 바로 열리지 않을 수 있어 STL 등으로 변환이 필요할 수 있습니다.</div>
+    <div class="m-notice">3D 모델 및 정보 출처: 대통령기록관(pa.go.kr). 공공누리 제4유형(출처표시·변경금지). ※ 치수 도구의 값은 데모용 예시이며 실측값이 아닙니다.</div>
+  `;
+}
+
+function switchArt(idx){ if(idx===curArt)return; curArt=idx; measuredH=null; const di=document.getElementById('dim-input'); if(di)di.value=''; const dc=document.getElementById('dim-calc'); if(dc){dc.classList.remove('active'); dc.textContent='입력 시 폭이 비율대로 자동 환산됩니다';} document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===idx)); loadArt(idx); }
+function toggleRot(){ isRot=!isRot; document.getElementById('b-rot').classList.toggle('active',isRot); }
+function toggleDim(){
+  dimOn=!dimOn; document.getElementById('b-dim').classList.toggle('active',dimOn);
+  document.getElementById('dim-badge').classList.toggle('show',dimOn && measuredH===null);
+  document.getElementById('dim-group').style.display=dimOn?'flex':'none';
+  if(dimOn){ isRot=false; document.getElementById('b-rot').classList.remove('active'); buildDimensions(); }
+  else { if(dimGroup){scene.remove(dimGroup); dimGroup=null;} document.getElementById('dim-h').style.display='none'; document.getElementById('dim-w').style.display='none'; }
+}
+function updateMeasure(v){
+  const calc=document.getElementById('dim-calc');
+  const badge=document.getElementById('dim-badge');
+  if(v===''||isNaN(parseFloat(v))||parseFloat(v)<=0){
+    measuredH=null; calc.classList.remove('active'); calc.textContent='입력 시 폭이 비율대로 자동 환산됩니다';
+    badge.classList.toggle('show', dimOn);  // 실측 없으면 예시값 경고 다시
+    return;
+  }
+  measuredH=parseFloat(v);
+  // 모델 bounding box의 정확한 비율로 폭 환산
+  const box=new THREE.Box3().setFromObject(currentModel);
+  const h=box.max.y-box.min.y, w=box.max.x-box.min.x;
+  const measuredW = measuredH * (w/h);
+  calc.classList.add('active');
+  calc.textContent=`높이 ${measuredH.toFixed(1)} cm 기준 · 폭 ${measuredW.toFixed(1)} cm (비율 환산)`;
+  badge.classList.remove('show');  // 실측 입력됐으니 예시값 경고 숨김
+}
+function toggleWire(){
+  wireOn=!wireOn; document.getElementById('b-wire').classList.toggle('active',wireOn);
+  if(currentModel){ currentModel.traverse(n=>{ if(n.isMesh&&n.material){ n.material.wireframe=wireOn; n.material.needsUpdate=true; } }); }
+}
+function toggleCut(){
+  cutOn=!cutOn; document.getElementById('b-cut').classList.toggle('active',cutOn);
+  document.getElementById('cut-group').style.display=cutOn?'flex':'none';
+  if(currentModel){ currentModel.traverse(n=>{ if(n.isMesh&&n.material){ n.material.clippingPlanes=cutOn?[clipPlane]:[]; n.material.needsUpdate=true; } }); }
+  if(cutOn) updateCut(document.getElementById('cut-slider').value);
+}
+function updateCut(v){
+  document.getElementById('cut-val').textContent=v+'%';
+  if(!modelBox) return;
+  const min=modelBox.min.x, max=modelBox.max.x;
+  const x=min+(max-min)*(v/100);
+  // 법선 (1,0,0), 평면식 x = -constant → x < -constant 영역이 남음
+  // x 위치에서 자르고 왼쪽(x<x절단)을 남기려면 constant = -x
+  clipPlane.constant=-x;
+}
+function updateLight(v){
+  lightMul=v/100; document.getElementById('light-val').textContent=v+'%';
+  const L=window._lights;
+  if(L){ L.amb.intensity=baseLightIntensity.amb*lightMul; L.key.intensity=baseLightIntensity.key*lightMul; L.fill.intensity=baseLightIntensity.fill*lightMul; }
+  renderer.toneMappingExposure=1.0*Math.sqrt(lightMul);
+}
+
+function openLightbox(url, title){
+  document.getElementById('lightbox-img').src = url;
+  document.getElementById('lightbox-caption').textContent = title;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox(){
+  document.getElementById('lightbox').classList.remove('open');
+  document.getElementById('lightbox-img').src = '';
+}
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeLightbox(); });
+
+function openLink(u){ window.open(u,'_blank','noopener'); }
+function onResize(){ const cv=document.getElementById('cv'); const w=cv.parentElement.clientWidth,h=cv.parentElement.clientHeight; camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.setSize(w,h); }
+function animate(){ requestAnimationFrame(animate); if(isRot&&currentModel)currentModel.rotation.y+=0.003; controls.update(); updateDimLabels(); renderer.render(scene,camera); }
+
+// ── 대통령별 탐색 UI ──
+const PRES_ORDER=['이승만','박정희','최규하','전두환','노태우','김영삼','김대중','노무현','이명박','박근혜','문재인'];
+let activePresFilter='전체';
+function buildNav(){
+  const preses=['전체',...PRES_ORDER.filter(p=>ARTS.some(a=>a.presName.startsWith(p)))];
+  document.getElementById('pres-bar').innerHTML=preses.map(p=>{
+    const cnt=p==='전체'?ARTS.length:ARTS.filter(a=>a.presName.startsWith(p)).length;
+    return '<div class="ptab'+(p===activePresFilter?' active':'')+'" onclick="filterPres(\'' + p + '\')">' + p + ' ' + cnt + '</div>';
+  }).join('');
+  renderArtList();
+}
+function filterPres(pres){
+  activePresFilter=pres;
+  document.querySelectorAll('#pres-bar .ptab').forEach(t=>t.classList.toggle('active',t.textContent.startsWith(pres)));
+  renderArtList();
+}
+function renderArtList(){
+  const filtered=activePresFilter==='전체'?ARTS:ARTS.filter(a=>a.presName.startsWith(activePresFilter));
+  document.getElementById('art-count').textContent=filtered.length+'건';
+  document.getElementById('art-list').innerHTML=filtered.map(a=>{
+    const gIdx=ARTS.indexOf(a);
+    const thumb=a.thumb
+      ?'<img src="'+a.thumb+'" loading="lazy" onerror="this.parentElement.innerHTML=\x27<div class=no-img>&#x1F3FA;</div>\x27">'
+      :'<div class="no-img">🏺</div>';
+    const dateVal=(a.meta.find(function(m){return m[0]==='증정일';})||['','날짜미상'])[1];
+    return '<div class="art-item'+(curArt===gIdx?' active':'')+'" onclick="gotoArt('+gIdx+')">'
+      +'<div class="art-thumb">'+thumb+'</div>'
+      +'<div class="art-info"><div class="art-title">'+a.title+'</div>'
+      +'<div class="art-sub">'+a.presName.replace(' 대통령','')+' · '+dateVal+'</div></div></div>';
+  }).join('');
+}
+function gotoArt(idx){
+  switchArt(idx);
+  renderArtList();
+  setTimeout(function(){
+    const el=document.querySelector('.art-item.active');
+    if(el) el.scrollIntoView({block:'nearest',behavior:'smooth'});
+  },50);
+}
+
+init(); loadArt(0); buildNav();
+</script>
+
+<div id="lightbox" onclick="closeLightbox()">
+  <button id="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="">
+  <div id="lightbox-caption"></div>
+</div>
+
+</body>
+</html>
